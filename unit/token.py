@@ -1,23 +1,3 @@
-"""from enum import Enum, auto, unique
-
-
-@unique
-class TokenType(Enum):
-    F_EML = auto() # function, exp minus ln, build-in function
-    L_PAREN = auto() # left, or open, parenthesis
-    R_PAREN = auto() # right, or close, parenthesis
-    COMMA = auto() # comma, function arguments delimiter
-    C_INT = auto() # constant int"""
-
-"""_expected_value_type_for_token_type_dict = {
-    TokenType.F_EML: object,
-    TokenType.L_PAREN: object,
-    TokenType.R_PAREN: object,
-    TokenType.COMMA: object,
-    TokenType.C_INT: int
-}"""
-
-
 class _Token:
     """
     词法单元抽象类
