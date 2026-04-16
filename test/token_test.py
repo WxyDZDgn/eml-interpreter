@@ -9,5 +9,8 @@ if __name__ == '__main__':
         ConstInt(20),
         EndOfStmt(),
         IdentVariable("eml"),
+        WhiteSpace("   \t   \t   "),
+        Assignment(),
     ]
-    print(ls)
+    ls = map(str, ls)
+    print('\n'.join(ls))

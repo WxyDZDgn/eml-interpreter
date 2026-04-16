@@ -67,7 +67,24 @@ class EndOfStmt(_Token):
 
 class IdentVariable(_Token):
     """
-    标识变量（函数名或变量名）
+    标识变量（函数名或变量名）词元
     """
     def __init__(self, token_value: str) -> None:
         super().__init__(token_value, token_value)
+
+class WhiteSpace(_Token):
+    """
+    空白字符（制表符，空格等）
+    """
+    def __init__(self, token_value: str) -> None:
+        super().__init__(
+            token_value.encode("unicode_escape").decode("ascii"), 
+            token_value
+        )
+
+class Assignment(_Token):
+    """
+    赋值词元
+    """
+    def __init__(self) -> None:
+        super().__init__("=", None)
