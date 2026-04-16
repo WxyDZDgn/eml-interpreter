@@ -88,3 +88,13 @@ class Assignment(_Token):
     """
     def __init__(self) -> None:
         super().__init__("=", None)
+
+class Unknown(_Token):
+    """
+    未知词元
+    """
+    def __init__(self, token_value: str) -> None:
+        super().__init__(
+            token_value.encode("unicode_escape").decode("ascii"), 
+            token_value
+        )
