@@ -6,7 +6,8 @@ if __name__ == '__main__':
         OpenParen(),
         CloseParen(),
         Comma(),
-        ConstInt(20)
+        ConstInt(20),
+        EndOfStmt(),
+        IdentVariable("eml"),
     ]
     print(ls)
-    pass
