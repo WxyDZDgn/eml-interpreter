@@ -80,7 +80,7 @@ h(x, y, z) = eml(h(x), h(y, z)) // ok
 h(y, z) = eml(h(y), h(z)) // 覆盖 h(x, y)
 ```
 
-# 值传递和引用传递标识符
+# 值传递和懒传递标识符
 
 `!`表示直接将其他非当前函数变量替换对应表达式, 后续修改对应变量结果不会影响有`!`所在的表达式, 如:
 
@@ -96,6 +96,83 @@ h = eml(3, 1)
 f(x) =! eml(x, h)    // f(x) = eml(x, eml(3, 1)), h 被 eml(3, 1) 替代.
 h = eml(5, 5)   // 此时, f(x) 还是原来的不变
 f(x)    // 输出: eml(x, eml(3, 1))
+```
+
+`?`表示相反的, 默认是`?`
+
+```eml-interpreter
+h = eml(3, 1)
+g = eml(1, 3)
+f = ?eml(h, g) // 等价于 f = eml(h, g)
+h = eml(5, 5)
+g = eml(9, 9)
+f // 此时 f 表示 eml(h, g), 即 eml(eml(5, 5), eml(9, 9))
+```
+
+## 修改嵌套内部所有变量的值懒传递
+
+```eml-interpreter
+h = eml(3, 1)
+g = eml(1, 3)
+f = !eml(h, g) // f 变成 eml(eml(3, 1), eml(1, 3))
+h = eml(5, 5)
+g = eml(9, 9)
+f // 此时 f 保持不变, 为 eml(eml(3, 1), eml(1, 3))
+```
+
+## 部分修改值懒传递
+
+```eml-interpreter
+h = eml(3, 1)
+g = eml(1, 3)
+f = !eml(h, ?g) // 只有 g 是 g, 即 f 为 eml(eml(3, 1), g)
+// 等价于 f = eml(!h, g) 或 f = eml(!h, ?g)
+h = eml(5, 5)
+g = eml(9, 9)
+f // f 参数只有 g 受到影响变成 eml(eml(3, 1), g), 即 eml(eml(3, 1), eml(9, 9))
+```
+
+## 连续修改值懒传递
+
+```eml-interpreter
+h = eml(3, 1)
+g = eml(1, 3)
+f = !?!?eml(h, g) // 值传递, f 为 eml(eml(3, 1), eml(1, 3))
+// f = !(?(!(?(eml(h, g)))))
+h = eml(5, 5)
+g = eml(9, 9)
+f // 结果是 eml(eml(3, 1), eml(1, 3))
+```
+
+## 允许连续修改为同一个
+
+```eml-interpreter
+h = eml(3, 1)
+g = eml(1, 3)
+f = !!!!!!!!?????????eml(h, g) // 直接取值, f 为 eml(eml(3, 1), eml(1, 3))
+h = eml(5, 5)
+g = eml(9, 9)
+f // 结果是 eml(eml(3, 1), eml(1, 3))
+```
+
+## 字面量和其它一样默认为懒传递
+
+```eml-interpreter
+h = eml(3, 1) // 等价于 eml(?3, ?1)
+h = eml(!3, !1) // 两者表现相同, 字面量无法被直接修改, 不像变量
+```
+
+## 警告连续设置
+
+```eml-interpreter
+h = ?????!!!!!eml(3, 1) // 警告 连续的设置
+```
+
+```eml-interpreter
+h = eml(?3, 1) // 警告 在只有字面量的情况下主动设置值传递或懒传递
+h = eml(!3, 1) // 警告 在只有字面量的情况下主动设置值传递或懒传递
+h = ?eml(3, 1) // 警告 在只有字面量的情况下主动设置值传递或懒传递
+h = !eml(3, 1) // 警告 在只有字面量的情况下主动设置值传递或懒传递
 ```
 
 # 多元函数
