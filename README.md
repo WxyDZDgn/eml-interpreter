@@ -2,4 +2,4 @@
 自制eml（exp minus ln）解释器
 
 # TODO
-![TODO Scatter Plot](todos_scatter.png)
+ <img src="./todos_scatter.png" width="50%" alt="TODO Scatter Plot" />
