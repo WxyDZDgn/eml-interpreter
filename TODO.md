@@ -5,4 +5,4 @@
 - [] 直接输出表达式（没有前缀`=`等内容时） `priority=70` `difficulty=30`
 - [] 循环???等结构??? `priority=0` `difficulty=100`
 - [] 我是不是还得写加减……比如简化表达式什么的，呃呃 `priority=0` `difficulty=100`
-- [] 修复plot文字bug `priority=100` `difficulty=20`
+- [x] 修复plot文字bug `priority=100` `difficulty=20`
