@@ -22,7 +22,7 @@ def parse_todo(filepath):
                     todos.append((pri, dif, content[:50]))  # 截取任务描述作为标签
     return todos
 
-def generate_scatter_plot(todos, output_path='todos_scatter.png'):
+def generate_scatter_plot(todos, output_path='./todos_scatter.png'):
     """生成散点图并保存"""
     plt.figure(figsize=(8, 8))
     x = [t[0] for t in todos]
@@ -43,10 +43,9 @@ def generate_scatter_plot(todos, output_path='todos_scatter.png'):
     plt.close()
 
 if __name__ == '__main__':
-    todos = parse_todo('TODO.md')
+    todos = parse_todo('./TODO.md')
     if todos:
         generate_scatter_plot(todos)
         print(f"✅ 生成散点图，包含 {len(todos)} 个 TODO 项")
     else:
         print("⚠️ 未找到带有 priority 和 difficulty 的 TODO 项")
-        
