@@ -4,7 +4,7 @@ from datetime import datetime
 
 def parse_todo(filepath):
     """从 Markdown 中提取 TODO 项的优先级和难易度"""
-    todos = []
+    coord = dict()
     with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
             # 匹配行首的 - [ ] 或 * [ ] 开头的任务行
@@ -19,19 +19,20 @@ def parse_todo(filepath):
                 pri = int(pri_match.group(1))
                 dif = int(dif_match.group(1))
                 if 0 <= pri <= 100 and 0 <= dif <= 100:
-                    todos.append((pri, dif, content[:50]))  # 截取任务描述作为标签
-    return todos
+                    coord[(pri, dif)] = (coord[(pri, dif)] if (pri, dif) in coord.keys() else 0) + 1
+    
+    return list(coord.items())
 
 def generate_scatter_plot(todos, output_path='./todos_scatter.png'):
     """生成散点图并保存"""
     plt.figure(figsize=(8, 8))
-    x = [t[0] for t in todos]
-    y = [t[1] for t in todos]
-    labels = [t[2] for t in todos]
+    x = [t[0][0] for t in todos]
+    y = [t[0][1] for t in todos]
+    labels = [f"count: {t[1]}" for t in todos]
 
     plt.scatter(x, y, c='blue', alpha=0.6)
     for i, label in enumerate(labels):
-        plt.annotate(label, (x[i], y[i]), fontsize=8, alpha=0.7)
+        plt.annotate(label, (x[i], y[i]), fontsize=10)
 
     plt.xlim(0, 100)
     plt.ylim(0, 100)
@@ -39,7 +40,7 @@ def generate_scatter_plot(todos, output_path='./todos_scatter.png'):
     plt.ylabel('Difficulty (higher = harder)')
     plt.title(f'TODO Scatter Plot - {datetime.now().strftime("%Y-%m-%d")}')
     plt.grid(True, linestyle='--', alpha=0.5)
-    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.savefig(output_path, dpi=100, bbox_inches='tight')
     plt.close()
 
 if __name__ == '__main__':
