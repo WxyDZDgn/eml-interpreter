@@ -8,14 +8,13 @@ def parse_todo(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
             # 匹配行首的 - [ ] 或 * [ ] 开头的任务行
-            match = re.match(r'^\s*[-*]\s+\[[ x]\]\s+(.*)', line)
-            print(f"line: {line}, match: {match}")
+            match = re.match(r'-\s\[\]\s(.*)', line)
             if not match:
                 continue
             content = match.group(1)
             # 提取 priority 和 difficulty（支持多种写法）
-            pri_match = re.search(r'priority[=:]\s*(\d+)', content, re.IGNORECASE)
-            dif_match = re.search(r'difficulty[=:]\s*(\d+)', content, re.IGNORECASE)
+            pri_match = re.search(r'priority=(\d+)', content, re.IGNORECASE)
+            dif_match = re.search(r'difficulty=(\d+)', content, re.IGNORECASE)
             if pri_match and dif_match:
                 pri = int(pri_match.group(1))
                 dif = int(dif_match.group(1))

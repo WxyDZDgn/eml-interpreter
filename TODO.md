@@ -1,7 +1,8 @@
-- [] 添加`!`和`?`，值传递和懒传递 `priority=80` `difficult=30`
-- [] 解析注释 `priority=90` `difficult=10`
-- [] 偏导 `priority=10` `difficult=100`
-- [] 可以不用`;`结尾`stmt` `priority=10` `difficult=50`
-- [] 直接输出表达式（没有前缀`=`等内容时） `priority=70` `difficult=30`
-- [] 循环???等结构??? `priority=0` `difficult=100`
-- [] 我是不是还得写加减……比如简化表达式什么的，呃呃 `priority=0` `difficult=100`
+- [] 添加`!`和`?`，值传递和懒传递 `priority=80` `difficulty=30`
+- [] 解析注释 `priority=90` `difficulty=10`
+- [] 偏导 `priority=10` `difficulty=100`
+- [] 可以不用`;`结尾`stmt` `priority=10` `difficulty=50`
+- [] 直接输出表达式（没有前缀`=`等内容时） `priority=70` `difficulty=30`
+- [] 循环???等结构??? `priority=0` `difficulty=100`
+- [] 我是不是还得写加减……比如简化表达式什么的，呃呃 `priority=0` `difficulty=100`
+- [] 修复plot文字bug `priority=100` `difficulty=20`
