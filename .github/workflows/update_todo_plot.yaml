@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install pyecharts
+        run: pip install matplotlib
 
       - name: Generate scatter plot
         run: python scripts/plot_todos.py
