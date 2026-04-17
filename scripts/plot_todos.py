@@ -9,6 +9,7 @@ def parse_todo(filepath):
         for line in f:
             # 匹配行首的 - [ ] 或 * [ ] 开头的任务行
             match = re.match(r'^\s*[-*]\s+\[[ x]\]\s+(.*)', line)
+            print(f"line: {line}, match: {match}")
             if not match:
                 continue
             content = match.group(1)
