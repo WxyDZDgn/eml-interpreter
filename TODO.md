@@ -1,5 +1,5 @@
 - [] 值懒传递：添加`!`和`?`，值传递和懒传递 `priority=80` `difficulty=30`
-- [] 注释：解析注释 `priority=90` `difficulty=10`
+- [x] 注释：解析行内注释 `priority=90` `difficulty=10`
 - [] 偏导 `priority=10` `difficulty=100`
 - [] 分号换行结尾：可以不用`;`结尾`stmt` `priority=10` `difficulty=50`
 - [] 输出表达式：直接输出表达式（没有前缀`=`等内容时） `priority=70` `difficulty=30`
@@ -11,3 +11,4 @@
 - [] 中括号语法：只有删除语句可以指定函数+中括号的语法，中括号一个整数指定参数数量 `priority=43` `difficulty=67` `timestamp=20260417203309`
 - [] 警告连续修改值懒传递：见`note.md` `priority=20` `difficulty=35`
 - [] 删除函数特性：自动删除依赖 `priority=50` `difficulty=76`
+- [] 注释：解析块内注释 `priority=38` `difficulty=10`

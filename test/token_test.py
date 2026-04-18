@@ -11,6 +11,8 @@ if __name__ == '__main__':
         IdentVariable("eml"),
         WhiteSpace("   \t   \t   "),
         Assignment(),
+        Unknown("?????"),
+        Annotation("//urdsnvfsd"),
     ]
     ls = map(str, ls)
     print('\n'.join(ls))
