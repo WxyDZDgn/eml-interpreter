@@ -1,4 +1,4 @@
-from unit.token import _Token, FuncEml, IdentVariable, Assignment, EndOfStmt
+from unit.token import FuncEml, IdentVariable, Assignment, EndOfStmt
 from unit.node import _Node
 from exer.lexer import lexer
 
@@ -27,7 +27,7 @@ class Parser:
                     end_of_stmt_indexes.append(index)
                 case _ if isinstance(cur, Assignment):
                     assignment_indexes.append(index)
-        
+
         print(tokens)
         print(end_of_stmt_indexes)
         print(assignment_indexes)

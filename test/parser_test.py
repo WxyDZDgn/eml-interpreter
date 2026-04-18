@@ -1,6 +1,6 @@
-from exer.parse import Parser
+from exer.parser import Parser
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     p = Parser()
     code = """
 ex(x) = eml(x, 1);
