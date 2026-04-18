@@ -12,3 +12,4 @@
 - [] 警告连续修改值懒传递：见`note.md` `priority=20` `difficulty=35`
 - [] 删除函数特性：自动删除依赖 `priority=50` `difficulty=76`
 - [] 注释：解析块内注释 `priority=38` `difficulty=10`
+- [] 词元：专门设计针对参数的词元 `priority=69` `difficulty=60`
