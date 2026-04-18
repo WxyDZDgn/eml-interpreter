@@ -244,6 +244,22 @@ g(x) = eml(h(x), 2)
 f(x) = .h(?g(x)) // 报错
 ```
 
+## 选择性删除
+
+```eml-interpreter
+f(x) = eml(x, 1)
+g(x) = eml(1, x)
+h(x) = eml(.f(x), g(x)) // 只删除 f[1]
+```
+
+## 自动删除依赖
+
+```eml-interpreter
+g(x) = eml(1, x)
+h(x) = eml(g(x), 1)
+.g(x) // 删除 g[1], 由于 h[1] 用上了 g[1], h[1] 也会被删除
+```
+
 ## 不能对常数删除
 
 ```eml-interpreter
@@ -262,8 +278,6 @@ g(x) = eml(1, x)
 h(x) = eml(.f(x), .g(x)) 
 // h(x) = eml(eml(x, 1), eml(1, x)), 并随后删除 h[1] 和 g[1]
 ```
-
-
 
 # 中括号语法
 

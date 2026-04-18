@@ -6,7 +6,8 @@
 - [] 程序控制结构：循环???等结构??? `priority=0` `difficulty=100`
 - [] 加减等运算符：我是不是还得写加减……比如简化表达式什么的，呃呃 `priority=0` `difficulty=100`
 - [x] TODOS可视化：修复plot文字bug `priority=100` `difficulty=20`
-- [] 删除函数语法：添加`.`语法，删除函数（依赖部分递归删除，不包括被`!`标记的函数），具体见`note.md` `priority=79` `difficulty=66` `timestamp=20260417202625`
+- [] 删除函数语法：添加`.`语法，删除函数，具体见`note.md` `priority=79` `difficulty=66` `timestamp=20260417202625`
 - [] 符号表控制字段：符号表添加`是否可修改`或者`是否可删除`字段，其中`eml[2]`为不可修改或删除 `priority=75` `difficulty=39` `timestamp=20260417202848`
 - [] 中括号语法：只有删除语句可以指定函数+中括号的语法，中括号一个整数指定参数数量 `priority=43` `difficulty=67` `timestamp=20260417203309`
 - [] 警告连续修改值懒传递：见`note.md` `priority=20` `difficulty=35`
+- [] 删除函数特性：自动删除依赖 `priority=50` `difficulty=76`
