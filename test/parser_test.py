@@ -1,4 +1,4 @@
-from exer.parser import Parser
+from exer.parser import parser
 
 import pytest
 from typing import Optional
@@ -45,11 +45,9 @@ from typing import Optional
 def test_parser_error_caused_by_assignments(code: str, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            p = Parser()
-            p.exec(code)
+            parser(code)
     else:
-        p = Parser()
-        p.exec(code)
+        parser(code)
 
 
 @pytest.mark.parametrize(
@@ -92,15 +90,12 @@ def test_parser_error_caused_by_assignments(code: str, error: Optional[str]):
 def test_parser_error_caused_by_unfinished_stmt(code: str, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            p = Parser()
-            p.exec(code)
+            parser(code)
     else:
-        p = Parser()
-        p.exec(code)
+        parser(code)
 
 
 if __name__ == "__main__":
-    p = Parser()
-    p.exec(
+    parser(
         "eml(x)  = eml(x, y);"
     )
