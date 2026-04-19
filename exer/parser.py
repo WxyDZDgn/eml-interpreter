@@ -129,87 +129,74 @@ def _transfer_state_before_assignment(
         assert False
 
 
-class Parser:
-    def __init__(self) -> None:
-        # (名称, 参数数量) -> (有效位, 可修改, AST)
-        self.symbol_table: dict[tuple[str, int], tuple[bool, bool, _Node]] = {}
-        self._init_eml()
+def parser(code: str) -> _Node:
+    tokens = lexer(code)
+    end_of_stmt_indexes = []
+    assignment_indexes = []
+    left_index = 0
+    cur_assignment_indexes_index = 0
+    for index in range(len(tokens)):
+        cur = tokens[index]
+        match cur:
+            case _ if isinstance(cur, EndOfStmt):
+                end_of_stmt_indexes.append(index)
+            case _ if isinstance(cur, Assignment):
+                assignment_indexes.append(index)
 
-    def _init_eml(self) -> None:
-        eml = _Node(FuncEml(), 2)
-        eml.append(_Node(IdentVariable("x")))
-        eml.append(_Node(IdentVariable("y")))
-        self.symbol_table[("eml", 2)] = (True, False, eml)
+    for right_index in end_of_stmt_indexes:
+        has_assignments_in_cur_stmt = False
+        for i in range(cur_assignment_indexes_index, len(assignment_indexes)):
+            if assignment_indexes[i] < right_index:
+                if has_assignments_in_cur_stmt:
+                    raise SyntaxError("同一个语句中不支持多个'='")
+                has_assignments_in_cur_stmt = True
+            elif assignment_indexes[i] > right_index:
+                break
+            else:
+                assert False, "不期望的分支"
 
-    def exec(self, code: str) -> list[str]:
-        tokens = lexer(code)
-        # 暂时不支持赋值
-        end_of_stmt_indexes = []
-        assignment_indexes = []
-        left_index = 0
-        cur_assignment_indexes_index = 0
-        for index in range(len(tokens)):
-            cur = tokens[index]
-            match cur:
-                case _ if isinstance(cur, EndOfStmt):
-                    end_of_stmt_indexes.append(index)
-                case _ if isinstance(cur, Assignment):
-                    assignment_indexes.append(index)
+        if has_assignments_in_cur_stmt:
+            # 有 '='
 
-        for right_index in end_of_stmt_indexes:
-            has_assignments_in_cur_stmt = False
-            for i in range(cur_assignment_indexes_index, len(assignment_indexes)):
-                if assignment_indexes[i] < right_index:
-                    if has_assignments_in_cur_stmt:
-                        raise SyntaxError("同一个语句中不支持多个'='")
-                    has_assignments_in_cur_stmt = True
-                elif assignment_indexes[i] > right_index:
-                    break
-                else:
-                    assert False, "不期望的分支"
-
-            if has_assignments_in_cur_stmt:
-                # 有 '='
-
-                # 处理赋值左边
-                # func_name(x, y) = eml(eml(1, x), eml(y, 1));
-                # ^^^^^^^^^^^^^^^^^
-                variables = []
-                cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
-                state = _ExpectedState.FUNC_NAME
-                while _ExpectedState.CHECKED_FIN_STATE not in state:
-                    tmp = _next_ignore_whitespaces_and_annotations(
-                        tokens, left_index, cur_assignment_index
-                    )
-                    if tmp is None:
-                        raise SyntaxError(_syntax_error_message(state))
-                    cur, left_index = tmp
-                    is_ident = _ExpectedState.IDENT_NAME in state
-                    state = _transfer_state_before_assignment(cur, state)
-                    if is_ident:
-                        variables.append(cur)
-
-                # 处理赋值右边
-                # func_name(x, y) = eml(eml(1, x), eml(y, 1));
-                #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # 处理赋值左边
+            # func_name(x, y) = eml(eml(1, x), eml(y, 1));
+            # ^^^^^^^^^^^^^^^^^
+            variables = []
+            cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
+            state = _ExpectedState.FUNC_NAME
+            while _ExpectedState.CHECKED_FIN_STATE not in state:
                 tmp = _next_ignore_whitespaces_and_annotations(
                     tokens, left_index, cur_assignment_index
                 )
-                print(variables)
-                raise NotImplementedError()
-            else:
-                # 无 '='
+                if tmp is None:
+                    raise SyntaxError(_syntax_error_message(state))
+                cur, left_index = tmp
+                is_ident = _ExpectedState.IDENT_NAME in state
+                state = _transfer_state_before_assignment(cur, state)
+                if is_ident:
+                    variables.append(cur)
 
-                raise NotImplementedError()
+            # 处理赋值右边
+            # func_name(x, y) = eml(eml(1, x), eml(y, 1));
+            #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            tmp = _next_ignore_whitespaces_and_annotations(
+                tokens, left_index, cur_assignment_index
+            )
+            print(variables)
+            raise NotImplementedError()
+        else:
+            # 无 '='
 
-            # 结束部分
-            left_index = right_index + 1
-            if has_assignments_in_cur_stmt:
-                cur_assignment_indexes_index += 1
+            raise NotImplementedError()
 
-        tmp = _next_ignore_whitespaces_and_annotations(tokens, left_index)
-        if tmp is None:
-            return []
-        raise SyntaxError("未完成的Stmt")
+        # 结束部分
+        left_index = right_index + 1
+        if has_assignments_in_cur_stmt:
+            cur_assignment_indexes_index += 1
 
-    pass
+    tmp = _next_ignore_whitespaces_and_annotations(tokens, left_index)
+    if tmp is None:
+        raise NotImplementedError()
+        return []
+    raise SyntaxError("未完成的Stmt")
+
