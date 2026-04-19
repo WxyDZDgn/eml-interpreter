@@ -22,7 +22,7 @@ _comma_reg = re.compile(r",")
 _end_of_stmt_reg = re.compile(r";")
 _white_space_reg = re.compile(r"[\s\t\n\r]+")
 _assignment_reg = re.compile(r"=")
-_annotation_inline_reg = re.compile(r"//.*\n?")
+_annotation_inline_reg = re.compile(r"//[^\n]+")
 _unknown_reg = re.compile(r"[^0-9a-zA-Z_(),;=/]+")
 
 
@@ -57,7 +57,8 @@ def lexer(code: str) -> list[_Token]:
             ls.append(Assignment())
             pre_idx += _.end()
         elif _ := _annotation_inline_reg.match(cur_str):
-            ls.append(Annotation(_.group()))
+            # 忽略注释, 不传递词元
+            # ls.append(Annotation(_.group()))
             pre_idx += _.end()
         elif _ := _unknown_reg.match(cur_str):
             ls.append(Unknown(_.group()))
