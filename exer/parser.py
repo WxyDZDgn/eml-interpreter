@@ -32,15 +32,16 @@ class _ExpectedState(Flag):
         CHECKED_FIN_STATE: 检查完毕
 
     规则:
-        START == FUNC_NAME
+        START       == FUNC_NAME
         FUNC_NAME   => OPEN_PAREN | FIN_STATE
         OPEN_PAREN  => CLOSE_PAREN | IDENT_NAME
         IDENT_NAME  => COMMA | CLOSE_PAREN
         COMMA       => IDENT_NAME
         CLOSE_PAREN => FIN_STATE
         FIN_STATE   => CHECKED_FIN_STATE
-        END == CHECKED_FIN_STATE
+        END         == CHECKED_FIN_STATE
     """
+
     FUNC_NAME = auto()
     OPEN_PAREN = auto()
     IDENT_NAME = auto()
@@ -96,7 +97,9 @@ def _next_ignore_whitespaces_and_annotations(
     return None
 
 
-def _transfer_state_before_assignment(token: _Token, state: _ExpectedState) -> _ExpectedState:
+def _transfer_state_before_assignment(
+    token: _Token, state: _ExpectedState
+) -> _ExpectedState:
     """
     状态机状态转换
     """
