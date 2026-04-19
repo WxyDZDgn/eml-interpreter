@@ -123,3 +123,12 @@ class Unknown(_Token):
         super().__init__(
             token_value.encode("unicode_escape").decode("ascii"), token_value
         )
+
+
+class ParameterVariable(_Token):
+    """
+    变量（特指函数参数，AST 专用）词元
+    """
+
+    def __init__(self, token_value: str) -> None:
+        super().__init__(token_value, token_value)
