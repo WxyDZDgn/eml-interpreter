@@ -2,7 +2,6 @@ from unit.token import (
     _Token,
     Comma,
     ConstInt,
-    FuncEml,
     IdentVariable,
     Assignment,
     EndOfStmt,
@@ -10,7 +9,6 @@ from unit.token import (
     Annotation,
     OpenParen,
     CloseParen,
-    ParameterVariable,
 )
 from unit.node import _Node
 from exer.lexer import lexer
@@ -121,49 +119,7 @@ def _next_ignore_whitespaces_and_annotations(
     assert False
 
 
-def _transfer_state_before_assignment(
-    token: _Token, state: _ExpectedState
-) -> _ExpectedState:
-    """
-    状态机状态转换（赋值词元前）
-
-    规则:
-        START       == FUNC_NAME
-        FUNC_NAME   => OPEN_PAREN
-        OPEN_PAREN  => CLOSE_PAREN | IDENT_NAME
-        IDENT_NAME  => COMMA | CLOSE_PAREN
-        COMMA       => IDENT_NAME
-        CLOSE_PAREN => FIN_STATE
-        FIN_STATE   => CHECKED_FIN_STATE
-        END         == CHECKED_FIN_STATE
-    """
-    if isinstance(token, IdentVariable):
-        if _ExpectedState.FUNC_NAME in state:
-            return _ExpectedState.OPEN_PAREN
-        if _ExpectedState.IDENT_NAME in state:
-            return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(token, OpenParen):
-        if _ExpectedState.OPEN_PAREN in state:
-            return _ExpectedState.IDENT_NAME | _ExpectedState.CLOSE_PAREN
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(token, Comma):
-        if _ExpectedState.COMMA in state:
-            return _ExpectedState.IDENT_NAME
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(token, CloseParen):
-        if _ExpectedState.CLOSE_PAREN in state:
-            return _ExpectedState.FIN_STATE
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(token, Assignment):
-        if _ExpectedState.FIN_STATE in state:
-            return _ExpectedState.CHECKED_FIN_STATE
-        raise SyntaxError(_syntax_error_message(state))
-    else:
-        assert False
-
-
-def _transfer_state_after_assignment(
+def _transfer_state(
     current_token: _Token, next_token: _Token, state: _ExpectedState, initial: bool
 ) -> _ExpectedState:
     """
@@ -251,8 +207,6 @@ def _construct_node(
     changed = False
     while True:
         tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
-        # if tmp is None:
-        #     raise SyntaxError(_syntax_error_message(state))
         cur, left = tmp
         if root is None:
             root = cur
@@ -265,8 +219,7 @@ def _construct_node(
         changed = True
         tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
         nxt, _ = tmp
-        # nxt = None if tmp is None else tmp[0]
-        state = _transfer_state_after_assignment(cur, nxt, state, initial)
+        state = _transfer_state(cur, nxt, state, initial)
         # 是函数导致的期望是'('，准备递归
         if _ExpectedState.OUTER_RECURSION in state:
             break
@@ -321,29 +274,6 @@ def parser(code: str) -> list[_Node]:
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             # ^^^^^^^^^^^^^^^^^
             left_node = _construct_node(tokens, left_index, cur_assignment_index)[0]
-            """variables: list[str] = []
-            cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
-            state = _ExpectedState.FUNC_NAME
-            while _ExpectedState.CHECKED_FIN_STATE not in state:
-                tmp = _next_ignore_whitespaces_and_annotations(
-                    tokens, left_index, cur_assignment_index
-                )
-                # if tmp is None:
-                #     raise SyntaxError(_syntax_error_message(state))
-                cur, left_index = tmp
-                is_ident = _ExpectedState.IDENT_NAME in state
-                is_func_name = _ExpectedState.FUNC_NAME in state
-                state = _transfer_state_before_assignment(cur, state)
-                if is_ident:
-                    para_name = cur.token_value
-                    assert isinstance(para_name, str)
-                    variables.append(para_name)
-                if is_func_name:
-                    func_token = cur
-            left_node = _Node(func_token, len(variables))
-            for _ in variables:
-                left_node.append(_Node(ParameterVariable(_)))"""
-
             # 处理赋值右边
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -369,8 +299,3 @@ def parser(code: str) -> list[_Node]:
     ):
         raise SyntaxError("未完成的Stmt")
     return res
-    # tmp = _next_ignore_whitespaces_and_annotations(tokens, left_index)
-    # if tmp is None:
-    #     raise NotImplementedError()
-    #     return res
-    # raise SyntaxError("未完成的Stmt")
