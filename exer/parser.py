@@ -25,13 +25,16 @@ class _ExpectedState(Flag):
     状态机判定期望解析的状态
 
     参数:
-        FUNC_NAME: 期望为'函数名'
+        FUNC_NAME: 期望为'函数名'，下一个词元严格是'('
         OPEN_PAREN: 期望为'('
         IDENT_NAME: 期望为'参数名'
         COMMA: 期望为','
         CLOSE_PAREN: 期望为')'
         FIN_STATE: 期望为'='
         CHECKED_FIN_STATE: 检查完毕
+
+        ENTER_RECURSION: 进入递归（右解析专用）
+        OUTER_RECURSION: 退出递归（右解析专用）
     """
 
     FUNC_NAME = auto()
@@ -42,6 +45,9 @@ class _ExpectedState(Flag):
     CLOSE_PAREN = auto()
     FIN_STATE = auto()
     CHECKED_FIN_STATE = auto()
+
+    ENTER_RECURSION = auto()
+    OUTER_RECURSION = auto()
 
 
 def _syntax_error_message(state: _ExpectedState) -> str:
@@ -63,12 +69,35 @@ def _syntax_error_message(state: _ExpectedState) -> str:
         s.append("')'")
     if _ExpectedState.FIN_STATE in state:
         s.append("'='")
+        s.append("';'")
     return f"期望{'或'.join(s)}"
+
+
+def _has_next_ignore_whitespaces_and_annotations(
+    tokens: list[_Token], left: int, right: Optional[int] = None
+) -> bool:
+    """
+    判断下一个不被忽略的Token是否存在
+    参数:
+        left: 开始下标（闭区间）
+        right: 结束下标（闭区间），默认为tokens长度
+
+    返回:
+        True: 表明 [left, right] 内有除了空白和注释词元之外的词元
+    """
+    # 开区间闭区间可能有bug
+    right = len(tokens) if right is None else (right + 1)
+    for i in range(left, min(right, len(tokens))):
+        cur = tokens[i]
+        if isinstance(cur, WhiteSpace) or isinstance(cur, Annotation):
+            continue
+        return True
+    return False
 
 
 def _next_ignore_whitespaces_and_annotations(
     tokens: list[_Token], left: int, right: Optional[int] = None
-) -> Optional[tuple[_Token, int]]:
+) -> tuple[_Token, int]:
     """
     解析下一个不被忽略的Token
     参数:
@@ -89,34 +118,7 @@ def _next_ignore_whitespaces_and_annotations(
         if isinstance(cur, WhiteSpace) or isinstance(cur, Annotation):
             continue
         return (cur, i + 1)
-    return None
-
-
-def _prev_ignore_whitespaces_and_annotations(
-    tokens: list[_Token], right: Optional[int] = None, left: Optional[int] = None
-) -> Optional[tuple[_Token, int]]:
-    """
-    解析上一个不被忽略的Token
-    参数:
-        right: 开始下标（闭区间）
-        left: 结束下标（闭区间），默认为tokens长度
-
-    返回:
-        None: 超过范围的Token
-        Tuple(
-            _Token: 非忽略的词元
-            int: 下一个需要解析的下标
-        )
-    """
-    # 开区间闭区间可能有bug
-    left = -1 if left is None else (left - 1)
-    right = len(tokens) - 1 if right is None else right
-    for i in range(right, max(left, -1), -1):
-        cur = tokens[i]
-        if isinstance(cur, WhiteSpace) or isinstance(cur, Annotation):
-            continue
-        return (cur, i - 1)
-    return None
+    assert False
 
 
 def _transfer_state_before_assignment(
@@ -127,7 +129,7 @@ def _transfer_state_before_assignment(
 
     规则:
         START       == FUNC_NAME
-        FUNC_NAME   => OPEN_PAREN | FIN_STATE
+        FUNC_NAME   => OPEN_PAREN
         OPEN_PAREN  => CLOSE_PAREN | IDENT_NAME
         IDENT_NAME  => COMMA | CLOSE_PAREN
         COMMA       => IDENT_NAME
@@ -137,7 +139,7 @@ def _transfer_state_before_assignment(
     """
     if isinstance(token, IdentVariable):
         if _ExpectedState.FUNC_NAME in state:
-            return _ExpectedState.OPEN_PAREN | _ExpectedState.FIN_STATE
+            return _ExpectedState.OPEN_PAREN
         if _ExpectedState.IDENT_NAME in state:
             return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
         raise SyntaxError(_syntax_error_message(state))
@@ -162,51 +164,142 @@ def _transfer_state_before_assignment(
 
 
 def _transfer_state_after_assignment(
-    current_token: _Token, next_token: Optional[_Token], state: _ExpectedState
+    current_token: _Token, next_token: _Token, state: _ExpectedState, initial: bool
 ) -> _ExpectedState:
     """
     状态机状态转换（赋值词元后）
 
     规则:
     """
-    raise NotImplementedError()
+    if isinstance(current_token, OpenParen):
+        if isinstance(next_token, CloseParen):
+            return _ExpectedState.CLOSE_PAREN
+        if _ExpectedState.OPEN_PAREN in state:
+            if initial:
+                return _ExpectedState.ENTER_RECURSION | _ExpectedState.FIN_STATE
+            return (
+                _ExpectedState.ENTER_RECURSION
+                | _ExpectedState.CLOSE_PAREN
+                | _ExpectedState.COMMA
+            )
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, CloseParen):
+        if _ExpectedState.CLOSE_PAREN in state:
+            if initial:
+                return _ExpectedState.FIN_STATE
+            return _ExpectedState.OUTER_RECURSION
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, Comma):
+        if _ExpectedState.COMMA in state:
+            return (
+                _ExpectedState.IDENT_NAME
+                | _ExpectedState.CONST_INT
+                | _ExpectedState.FUNC_NAME
+            )
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, ConstInt):
+        if _ExpectedState.CONST_INT in state:
+            if initial:
+                return _ExpectedState.FIN_STATE
+            else:
+                return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, IdentVariable):
+        if isinstance(next_token, OpenParen):
+            if _ExpectedState.FUNC_NAME in state:
+                return _ExpectedState.OPEN_PAREN
+            raise SyntaxError(_syntax_error_message(state))
+        if _ExpectedState.IDENT_NAME in state:
+            if initial:
+                return _ExpectedState.FIN_STATE
+            return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, Assignment):
+        if _ExpectedState.FIN_STATE:
+            return _ExpectedState.CHECKED_FIN_STATE
+        raise SyntaxError(_syntax_error_message(state))
+    elif isinstance(current_token, EndOfStmt):
+        if _ExpectedState.FIN_STATE:
+            return _ExpectedState.CHECKED_FIN_STATE
+        raise SyntaxError(_syntax_error_message(state))
+    else:
+        assert False
 
 
 def _construct_node(
-    variables: list[str],
     tokens: list[_Token],
     left: int,
     right: int,
     initial: bool = True,
 ) -> tuple[_Node, int]:
-    state = (
-        _ExpectedState.FUNC_NAME | _ExpectedState.CONST_INT | _ExpectedState.IDENT_NAME
+    state: _ExpectedState = (
+        (
+            _ExpectedState.CONST_INT
+            | _ExpectedState.FUNC_NAME
+            | _ExpectedState.IDENT_NAME
+        )
+        if initial
+        else (
+            _ExpectedState.CONST_INT
+            | _ExpectedState.FUNC_NAME
+            | _ExpectedState.IDENT_NAME
+            | _ExpectedState.OUTER_RECURSION
+        )
     )
-    tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
-    if tmp is None:
-        raise SyntaxError(_syntax_error_message(state))
-    cur, left_next = tmp
-    tmp = _next_ignore_whitespaces_and_annotations(tokens, left_next, right)
-    nxt = None if tmp is None else tmp[0]
-    raise NotImplementedError()
-
-    pass
+    root: Optional[_Token] = None
+    parameters: list[_Node] = []
+    changed = False
+    while True:
+        tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
+        # if tmp is None:
+        #     raise SyntaxError(_syntax_error_message(state))
+        cur, left = tmp
+        if root is None:
+            root = cur
+        if isinstance(cur, EndOfStmt) or isinstance(cur, Assignment):
+            if not initial:
+                raise SyntaxError("未完成的')'")
+            if not changed:
+                raise SyntaxError(_syntax_error_message(state))
+            break
+        changed = True
+        tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
+        nxt, _ = tmp
+        # nxt = None if tmp is None else tmp[0]
+        state = _transfer_state_after_assignment(cur, nxt, state, initial)
+        # 是函数导致的期望是'('，准备递归
+        if _ExpectedState.OUTER_RECURSION in state:
+            break
+        if _ExpectedState.ENTER_RECURSION in state:
+            tmp = _construct_node(tokens, left, right, False)
+            parameters.append(tmp[0])
+            left = tmp[1]
+            continue
+        if _ExpectedState.COMMA in state or _ExpectedState.CLOSE_PAREN in state:
+            parameters.append(_Node(cur))
+    assert root is not None
+    res = _Node(root, len(parameters))
+    for each in parameters:
+        res.append(each)
+    return (res, left)
 
 
 def parser(code: str) -> list[_Node]:
-    tokens = lexer(code)
-    res = []
-    end_of_stmt_indexes = []
-    assignment_indexes = []
+    tokens: list[_Token] = lexer(code)
+    res: list[_Node] = []
+    end_of_stmt_indexes: list[int] = []
+    assignment_indexes: list[int] = []
     left_index = 0
     cur_assignment_indexes_index = 0
     for index in range(len(tokens)):
         cur = tokens[index]
-        match cur:
-            case _ if isinstance(cur, EndOfStmt):
-                end_of_stmt_indexes.append(index)
-            case _ if isinstance(cur, Assignment):
-                assignment_indexes.append(index)
+        if isinstance(cur, EndOfStmt):
+            end_of_stmt_indexes.append(index)
+        if isinstance(cur, Assignment):
+            assignment_indexes.append(index)
+
+    if len(tokens) <= 0:
+        raise SyntaxError("空代码")
 
     for right_index in end_of_stmt_indexes:
         has_assignments_in_cur_stmt = False
@@ -221,20 +314,22 @@ def parser(code: str) -> list[_Node]:
                 assert False, "不期望的分支"
 
         if has_assignments_in_cur_stmt:
+            cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
             # 有 '='
             root_node = _Node(tokens[cur_assignment_index], 2)
             # 处理赋值左边
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             # ^^^^^^^^^^^^^^^^^
-            variables: list[str] = []
+            left_node = _construct_node(tokens, left_index, cur_assignment_index)[0]
+            """variables: list[str] = []
             cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
             state = _ExpectedState.FUNC_NAME
             while _ExpectedState.CHECKED_FIN_STATE not in state:
                 tmp = _next_ignore_whitespaces_and_annotations(
                     tokens, left_index, cur_assignment_index
                 )
-                if tmp is None:
-                    raise SyntaxError(_syntax_error_message(state))
+                # if tmp is None:
+                #     raise SyntaxError(_syntax_error_message(state))
                 cur, left_index = tmp
                 is_ident = _ExpectedState.IDENT_NAME in state
                 is_func_name = _ExpectedState.FUNC_NAME in state
@@ -247,31 +342,35 @@ def parser(code: str) -> list[_Node]:
                     func_token = cur
             left_node = _Node(func_token, len(variables))
             for _ in variables:
-                left_node.append(_Node(ParameterVariable(_)))
+                left_node.append(_Node(ParameterVariable(_)))"""
 
             # 处理赋值右边
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
             # `cur_assignment_index + 1` `right_index`
-            right_node = _construct_node(
-                variables, tokens, cur_assignment_index + 1, right_index
-            )[0]
+            right_node = _construct_node(tokens, cur_assignment_index + 1, right_index)[
+                0
+            ]
 
             root_node.append(left_node)
             root_node.append(right_node)
             res.append(root_node)
         else:
             # 无 '='
-
-            raise NotImplementedError()
+            res.append(_construct_node(tokens, left_index, right_index, True)[0])
 
         # 结束部分
         left_index = right_index + 1
         if has_assignments_in_cur_stmt:
             cur_assignment_indexes_index += 1
 
-    tmp = _next_ignore_whitespaces_and_annotations(tokens, left_index)
-    if tmp is None:
-        raise NotImplementedError()
-        return res
-    raise SyntaxError("未完成的Stmt")
+    if len(end_of_stmt_indexes) <= 0 or _has_next_ignore_whitespaces_and_annotations(
+        tokens, end_of_stmt_indexes[-1] + 1
+    ):
+        raise SyntaxError("未完成的Stmt")
+    return res
+    # tmp = _next_ignore_whitespaces_and_annotations(tokens, left_index)
+    # if tmp is None:
+    #     raise NotImplementedError()
+    #     return res
+    # raise SyntaxError("未完成的Stmt")
