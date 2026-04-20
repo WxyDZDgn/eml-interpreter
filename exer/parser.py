@@ -51,6 +51,12 @@ class _ExpectedState(Flag):
 def _syntax_error_message(state: _ExpectedState) -> str:
     """
     状态未达到期望的报错信息
+
+    参数:
+        state: 未达到的期望
+
+    返回:
+        str, 基于未达到期望的状态返回报错信息
     """
     s = []
     if _ExpectedState.FUNC_NAME in state:
@@ -126,6 +132,7 @@ def _transfer_state(
     状态机状态转换（赋值词元后）
 
     规则:
+        TODO:
     """
     if isinstance(current_token, OpenParen):
         if isinstance(next_token, CloseParen):
@@ -188,6 +195,21 @@ def _construct_node(
     right: int,
     initial: bool = True,
 ) -> tuple[_Node, int]:
+    """
+    根据下标在闭区间 [left, right] 区间内的词元构造 AST
+
+    参数:
+        tokens: 词法分析器返回的词元列表
+        left: 处理的最左词元的下标
+        right: 处理的最右词元的下标
+        initial: 是否第一次运行函数（是则表示当前为递归第一层，否则为其他层）
+
+    返回:
+        Tuple(
+            _Node: AST 节点
+            int: 完成后下一步该处理的 Token 对应下标
+        )
+    """
     state: _ExpectedState = (
         (
             _ExpectedState.CONST_INT
@@ -238,6 +260,17 @@ def _construct_node(
 
 
 def parser(code: str) -> list[_Node]:
+    """
+    语法分析器，根据代码分析格式并为每一条 Stmt 得到一个 AST，组合返回一个列表
+
+    参数:
+        code: 代码片段
+
+    返回:
+        list[
+            _Node: 单个 Stmt 的 AST 结构
+        ]: 所有 Stmt 的 AST
+    """
     tokens: list[_Token] = lexer(code)
     res: list[_Node] = []
     end_of_stmt_indexes: list[int] = []
