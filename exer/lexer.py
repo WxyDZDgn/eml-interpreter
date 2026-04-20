@@ -22,7 +22,7 @@ _comma_reg = re.compile(r",")
 _end_of_stmt_reg = re.compile(r";")
 _white_space_reg = re.compile(r"[\s\t\n\r]+")
 _assignment_reg = re.compile(r"=")
-_annotation_inline_reg = re.compile(r"//[^\n]+")
+_annotation_inline_reg = re.compile(r"//[^\n]*")
 _unknown_reg = re.compile(r"[^0-9a-zA-Z_(),;=/]+")
 
 
