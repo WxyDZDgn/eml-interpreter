@@ -1,4 +1,5 @@
-from exer.parser import parser
+from exer.parser import parser, _next_ignore_whitespaces_and_annotations, _prev_ignore_whitespaces_and_annotations
+from exer.lexer import lexer
 
 import pytest
 from typing import Optional
@@ -96,6 +97,11 @@ def test_parser_error_caused_by_unfinished_stmt(code: str, error: Optional[str])
 
 
 if __name__ == "__main__":
-    parser(
-        "eml(x)  = eml(x, y);"
+    tokens = lexer(
+        "eml;"
     )
+    tmp = _prev_ignore_whitespaces_and_annotations(tokens)
+    while tmp is not None:
+        cur, right = tmp
+        print(cur, right)
+        tmp = _prev_ignore_whitespaces_and_annotations(tokens, right)
