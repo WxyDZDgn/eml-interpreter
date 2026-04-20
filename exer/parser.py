@@ -1,6 +1,7 @@
 from unit.token import (
     _Token,
     Comma,
+    ConstInt,
     FuncEml,
     IdentVariable,
     Assignment,
@@ -9,6 +10,7 @@ from unit.token import (
     Annotation,
     OpenParen,
     CloseParen,
+    ParameterVariable,
 )
 from unit.node import _Node
 from exer.lexer import lexer
@@ -35,6 +37,7 @@ class _ExpectedState(Flag):
     FUNC_NAME = auto()
     OPEN_PAREN = auto()
     IDENT_NAME = auto()
+    CONST_INT = auto()
     COMMA = auto()
     CLOSE_PAREN = auto()
     FIN_STATE = auto()
@@ -51,7 +54,9 @@ def _syntax_error_message(state: _ExpectedState) -> str:
     if _ExpectedState.OPEN_PAREN in state:
         s.append("'('")
     if _ExpectedState.IDENT_NAME in state:
-        s.append("'参数名'")
+        s.append("参数名")
+    if _ExpectedState.CONST_INT in state:
+        s.append("常数")
     if _ExpectedState.COMMA in state:
         s.append("','")
     if _ExpectedState.CLOSE_PAREN in state:
@@ -86,6 +91,7 @@ def _next_ignore_whitespaces_and_annotations(
         return (cur, i + 1)
     return None
 
+
 def _prev_ignore_whitespaces_and_annotations(
     tokens: list[_Token], right: Optional[int] = None, left: Optional[int] = None
 ) -> Optional[tuple[_Token, int]]:
@@ -118,7 +124,7 @@ def _transfer_state_before_assignment(
 ) -> _ExpectedState:
     """
     状态机状态转换（赋值词元前）
-    
+
     规则:
         START       == FUNC_NAME
         FUNC_NAME   => OPEN_PAREN | FIN_STATE
@@ -154,9 +160,38 @@ def _transfer_state_before_assignment(
     else:
         assert False
 
-def _construct_node(variables: list[_Token], tokens: list[_Token], left: int, right: int) -> _Node:
-    
+
+def _transfer_state_after_assignment(
+    current_token: _Token, next_token: Optional[_Token], state: _ExpectedState
+) -> _ExpectedState:
+    """
+    状态机状态转换（赋值词元后）
+
+    规则:
+    """
+    raise NotImplementedError()
+
+
+def _construct_node(
+    variables: list[str],
+    tokens: list[_Token],
+    left: int,
+    right: int,
+    initial: bool = True,
+) -> tuple[_Node, int]:
+    state = (
+        _ExpectedState.FUNC_NAME | _ExpectedState.CONST_INT | _ExpectedState.IDENT_NAME
+    )
+    tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
+    if tmp is None:
+        raise SyntaxError(_syntax_error_message(state))
+    cur, left_next = tmp
+    tmp = _next_ignore_whitespaces_and_annotations(tokens, left_next, right)
+    nxt = None if tmp is None else tmp[0]
+    raise NotImplementedError()
+
     pass
+
 
 def parser(code: str) -> list[_Node]:
     tokens = lexer(code)
@@ -191,7 +226,7 @@ def parser(code: str) -> list[_Node]:
             # 处理赋值左边
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             # ^^^^^^^^^^^^^^^^^
-            variables: list[_Token] = []
+            variables: list[str] = []
             cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
             state = _ExpectedState.FUNC_NAME
             while _ExpectedState.CHECKED_FIN_STATE not in state:
@@ -205,18 +240,22 @@ def parser(code: str) -> list[_Node]:
                 is_func_name = _ExpectedState.FUNC_NAME in state
                 state = _transfer_state_before_assignment(cur, state)
                 if is_ident:
-                    variables.append(cur)
+                    para_name = cur.token_value
+                    assert isinstance(para_name, str)
+                    variables.append(para_name)
                 if is_func_name:
                     func_token = cur
             left_node = _Node(func_token, len(variables))
             for _ in variables:
-                left_node.append(_Node(_))
+                left_node.append(_Node(ParameterVariable(_)))
 
             # 处理赋值右边
             # func_name(x, y) = eml(eml(1, x), eml(y, 1));
             #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
             # `cur_assignment_index + 1` `right_index`
-            right_node = _construct_node(variables, tokens, cur_assignment_index + 1, right_index)
+            right_node = _construct_node(
+                variables, tokens, cur_assignment_index + 1, right_index
+            )[0]
 
             root_node.append(left_node)
             root_node.append(right_node)
@@ -236,4 +275,3 @@ def parser(code: str) -> list[_Node]:
         raise NotImplementedError()
         return res
     raise SyntaxError("未完成的Stmt")
-
