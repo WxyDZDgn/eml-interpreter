@@ -126,7 +126,11 @@ def _next_ignore_whitespaces_and_annotations(
 
 
 def _transfer_state(
-    current_token: _Token, next_token: _Token, state: _ExpectedState, initial: bool
+    state: _ExpectedState,
+    initial: bool,
+    current_token: _Token,
+    prev_token: Optional[_Token] = None,
+    next_token: Optional[_Token] = None,
 ) -> _ExpectedState:
     """
     状态机状态转换（赋值词元后）
@@ -134,59 +138,115 @@ def _transfer_state(
     规则:
         TODO:
     """
-    if isinstance(current_token, OpenParen):
-        if isinstance(next_token, CloseParen):
-            return _ExpectedState.CLOSE_PAREN
-        if _ExpectedState.OPEN_PAREN in state:
-            if initial:
-                return _ExpectedState.ENTER_RECURSION | _ExpectedState.FIN_STATE
-            return (
-                _ExpectedState.ENTER_RECURSION
-                | _ExpectedState.CLOSE_PAREN
-                | _ExpectedState.COMMA
-            )
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, CloseParen):
-        if _ExpectedState.CLOSE_PAREN in state:
-            if initial:
-                return _ExpectedState.FIN_STATE
-            return _ExpectedState.OUTER_RECURSION
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, Comma):
-        if _ExpectedState.COMMA in state:
-            return (
-                _ExpectedState.IDENT_NAME
-                | _ExpectedState.CONST_INT
-                | _ExpectedState.FUNC_NAME
-            )
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, ConstInt):
-        if _ExpectedState.CONST_INT in state:
-            if initial:
-                return _ExpectedState.FIN_STATE
-            else:
-                return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, IdentVariable):
-        if isinstance(next_token, OpenParen):
-            if _ExpectedState.FUNC_NAME in state:
-                return _ExpectedState.OPEN_PAREN
+    if next_token is not None:
+        if isinstance(current_token, OpenParen):
+            if isinstance(next_token, CloseParen):
+                return _ExpectedState.CLOSE_PAREN
+            if _ExpectedState.OPEN_PAREN in state:
+                if initial:
+                    return _ExpectedState.ENTER_RECURSION | _ExpectedState.FIN_STATE
+                return (
+                    _ExpectedState.ENTER_RECURSION
+                    | _ExpectedState.CLOSE_PAREN
+                    | _ExpectedState.COMMA
+                )
             raise SyntaxError(_syntax_error_message(state))
-        if _ExpectedState.IDENT_NAME in state:
-            if initial:
-                return _ExpectedState.FIN_STATE
-            return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, Assignment):
-        if _ExpectedState.FIN_STATE:
-            return _ExpectedState.CHECKED_FIN_STATE
-        raise SyntaxError(_syntax_error_message(state))
-    elif isinstance(current_token, EndOfStmt):
-        if _ExpectedState.FIN_STATE:
-            return _ExpectedState.CHECKED_FIN_STATE
-        raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, CloseParen):
+            if _ExpectedState.CLOSE_PAREN in state:
+                if isinstance(prev_token, OpenParen):
+                    if initial:
+                        return _ExpectedState.FIN_STATE
+                    return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
+                return _ExpectedState.OUTER_RECURSION
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, Comma):
+            if _ExpectedState.COMMA in state:
+                return (
+                    _ExpectedState.IDENT_NAME
+                    | _ExpectedState.CONST_INT
+                    | _ExpectedState.FUNC_NAME
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, ConstInt):
+            if _ExpectedState.CONST_INT in state:
+                if initial:
+                    return _ExpectedState.FIN_STATE
+                else:
+                    return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, IdentVariable):
+            if isinstance(next_token, OpenParen):
+                if _ExpectedState.FUNC_NAME in state:
+                    return _ExpectedState.OPEN_PAREN
+                raise SyntaxError(_syntax_error_message(state))
+            if _ExpectedState.IDENT_NAME in state:
+                if initial:
+                    return _ExpectedState.FIN_STATE
+                return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, Assignment):
+            if _ExpectedState.FIN_STATE:
+                return _ExpectedState.CHECKED_FIN_STATE
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, EndOfStmt):
+            if _ExpectedState.FIN_STATE:
+                return _ExpectedState.CHECKED_FIN_STATE
+            raise SyntaxError(_syntax_error_message(state))
+        else:
+            assert False
     else:
-        assert False
+        if isinstance(current_token, OpenParen):
+            if _ExpectedState.OPEN_PAREN in state:
+                return (
+                    _ExpectedState.FUNC_NAME
+                    | _ExpectedState.IDENT_NAME
+                    | _ExpectedState.CONST_INT
+                    | _ExpectedState.CLOSE_PAREN
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, CloseParen):
+            if _ExpectedState.CLOSE_PAREN in state:
+                return (
+                    _ExpectedState.COMMA
+                    | _ExpectedState.CLOSE_PAREN
+                    | _ExpectedState.FIN_STATE
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, Comma):
+            if _ExpectedState.COMMA in state:
+                return (
+                    _ExpectedState.IDENT_NAME
+                    | _ExpectedState.CONST_INT
+                    | _ExpectedState.FUNC_NAME
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, ConstInt):
+            if _ExpectedState.CONST_INT in state:
+                return (
+                    _ExpectedState.COMMA
+                    | _ExpectedState.CLOSE_PAREN
+                    | _ExpectedState.FIN_STATE
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, IdentVariable):
+            if _ExpectedState.IDENT_NAME in state or _ExpectedState.FUNC_NAME in state:
+                return (
+                    _ExpectedState.OPEN_PAREN
+                    | _ExpectedState.COMMA
+                    | _ExpectedState.CLOSE_PAREN
+                    | _ExpectedState.FIN_STATE
+                )
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, Assignment):
+            if _ExpectedState.FIN_STATE:
+                return _ExpectedState.CHECKED_FIN_STATE
+            raise SyntaxError(_syntax_error_message(state))
+        elif isinstance(current_token, EndOfStmt):
+            if _ExpectedState.FIN_STATE:
+                return _ExpectedState.CHECKED_FIN_STATE
+            raise SyntaxError(_syntax_error_message(state))
+        else:
+            assert False
 
 
 def _construct_node(
@@ -226,8 +286,9 @@ def _construct_node(
     )
     root: Optional[_Token] = None
     parameters: list[_Node] = []
-    changed = False
+    prv: Optional[_Token] = None
     while True:
+        pre_left = left
         tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
         cur, left = tmp
         if root is None:
@@ -235,16 +296,18 @@ def _construct_node(
         if isinstance(cur, EndOfStmt) or isinstance(cur, Assignment):
             if not initial:
                 raise SyntaxError("未完成的')'")
-            if not changed:
+            if prv is None:
                 raise SyntaxError(_syntax_error_message(state))
+            state = _transfer_state(state, initial, cur, None, None)
+            assert _ExpectedState.CHECKED_FIN_STATE in state
             break
-        changed = True
         tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
         nxt, _ = tmp
-        state = _transfer_state(cur, nxt, state, initial)
+        state = _transfer_state(state, initial, cur, prv, nxt)
         # 是函数导致的期望是'('，准备递归
         if _ExpectedState.OUTER_RECURSION in state:
             break
+        prv = cur
         if _ExpectedState.ENTER_RECURSION in state:
             tmp = _construct_node(tokens, left, right, False)
             parameters.append(tmp[0])
@@ -256,7 +319,7 @@ def _construct_node(
     res = _Node(root, len(parameters))
     for each in parameters:
         res.append(each)
-    return (res, left)
+    return (res, pre_left)
 
 
 def parser(code: str) -> list[_Node]:
