@@ -5,8 +5,6 @@ from unit.token import (
     IdentVariable,
     Assignment,
     EndOfStmt,
-    WhiteSpace,
-    Annotation,
     OpenParen,
     CloseParen,
 )
@@ -15,7 +13,6 @@ from exer.lexer import lexer
 
 
 from enum import Flag, auto
-from typing import Optional
 
 
 class _ExpectedState(Flag):
@@ -23,238 +20,144 @@ class _ExpectedState(Flag):
     状态机判定期望解析的状态
 
     参数:
-        FUNC_NAME: 期望为'函数名'，下一个词元严格是'('
-        OPEN_PAREN: 期望为'('
-        IDENT_NAME: 期望为'参数名'
-        COMMA: 期望为','
-        CLOSE_PAREN: 期望为')'
-        FIN_STATE: 期望为'='
-        CHECKED_FIN_STATE: 检查完毕
-
-        ENTER_RECURSION: 进入递归（右解析专用）
-        OUTER_RECURSION: 退出递归（右解析专用）
+        IDENT_STATE: 期望标识符
+        OPEN_PAREN_STATE: 期望'('
+        CLOSE_PAREN_STATE: 期望')'
+        COMMA_STATE: 期望','
+        CONST_INT_STATE: 期望常数
+        FIN_STATE: 期望'='或';'
+        CHECKED_FIN_STATE: 检查完成
     """
 
-    FUNC_NAME = auto()
-    OPEN_PAREN = auto()
-    IDENT_NAME = auto()
-    CONST_INT = auto()
-    COMMA = auto()
-    CLOSE_PAREN = auto()
+    IDENT_STATE = auto()
+    OPEN_PAREN_STATE = auto()
+    CLOSE_PAREN_STATE = auto()
+    COMMA_STATE = auto()
+    CONST_INT_STATE = auto()
     FIN_STATE = auto()
     CHECKED_FIN_STATE = auto()
 
-    ENTER_RECURSION = auto()
-    OUTER_RECURSION = auto()
+    pass
 
 
-def _syntax_error_message(state: _ExpectedState) -> str:
+def _syntax_error_message(
+    state: _ExpectedState,
+    is_ignoring_before_or_after_assignment: bool = True,
+    is_after_assignment: bool = True,
+) -> str:
     """
     状态未达到期望的报错信息
 
     参数:
         state: 未达到的期望
+        is_ignoring_before_or_after_assignment: 是否需要区分'='和';'
+        is_after_assignment: 若为 True 则期望';', 否则期望'='
 
     返回:
         str, 基于未达到期望的状态返回报错信息
     """
     s = []
-    if _ExpectedState.FUNC_NAME in state:
-        s.append("函数名")
-    if _ExpectedState.OPEN_PAREN in state:
+    if _ExpectedState.IDENT_STATE in state:
+        s.append("标识符")
+    if _ExpectedState.OPEN_PAREN_STATE in state:
         s.append("'('")
-    if _ExpectedState.IDENT_NAME in state:
-        s.append("参数名")
-    if _ExpectedState.CONST_INT in state:
-        s.append("常数")
-    if _ExpectedState.COMMA in state:
-        s.append("','")
-    if _ExpectedState.CLOSE_PAREN in state:
+    if _ExpectedState.CLOSE_PAREN_STATE in state:
         s.append("')'")
+    if _ExpectedState.COMMA_STATE in state:
+        s.append("','")
+    if _ExpectedState.CONST_INT_STATE in state:
+        s.append("常数")
     if _ExpectedState.FIN_STATE in state:
-        s.append("'='")
-        s.append("';'")
+        if is_ignoring_before_or_after_assignment or not is_after_assignment:
+            s.append("'='")
+        if is_ignoring_before_or_after_assignment or is_after_assignment:
+            s.append("';'")
     return f"期望{'或'.join(s)}"
-
-
-def _has_next_ignore_whitespaces_and_annotations(
-    tokens: list[_Token], left: int, right: Optional[int] = None
-) -> bool:
-    """
-    判断下一个不被忽略的Token是否存在
-    参数:
-        left: 开始下标（闭区间）
-        right: 结束下标（闭区间），默认为tokens长度
-
-    返回:
-        True: 表明 [left, right] 内有除了空白和注释词元之外的词元
-    """
-    # 开区间闭区间可能有bug
-    right = len(tokens) if right is None else (right + 1)
-    for i in range(left, min(right, len(tokens))):
-        cur = tokens[i]
-        if isinstance(cur, WhiteSpace) or isinstance(cur, Annotation):
-            continue
-        return True
-    return False
-
-
-def _next_ignore_whitespaces_and_annotations(
-    tokens: list[_Token], left: int, right: Optional[int] = None
-) -> tuple[_Token, int]:
-    """
-    解析下一个不被忽略的Token
-    参数:
-        left: 开始下标（闭区间）
-        right: 结束下标（闭区间），默认为tokens长度
-
-    返回:
-        None: 超过范围的Token
-        Tuple(
-            _Token: 非忽略的词元
-            int: 下一个需要解析的下标
-        )
-    """
-    # 开区间闭区间可能有bug
-    right = len(tokens) if right is None else (right + 1)
-    for i in range(left, min(right, len(tokens))):
-        cur = tokens[i]
-        if isinstance(cur, WhiteSpace) or isinstance(cur, Annotation):
-            continue
-        return (cur, i + 1)
-    assert False
 
 
 def _transfer_state(
     state: _ExpectedState,
-    initial: bool,
-    current_token: _Token,
-    prev_token: Optional[_Token] = None,
-    next_token: Optional[_Token] = None,
+    token: _Token,
+    length_of_stack: int,
+    is_ignoring_before_or_after_assignment: bool = True,
 ) -> _ExpectedState:
     """
     状态机状态转换（赋值词元后）
 
+    参数:
+        state: 当前期望状态
+        token: 当前词元
+        length_of_stack: 函数栈长度（除去根）
+        is_ignoring_before_or_after_assignment: 用于细化报错信息, 见 `_syntax_error_message`
+
+    返回:
+        _ExpectedState: 返回下一个的期望状态
+
     规则:
-        TODO:
+        IDENT_STATE       => OPEN_PAREN_STATE
+                           | CLOSE_PAREN_STATE
+                           | COMMA_STATE
+                           | FIN_STATE
+        OPEN_PAREN_STATE  => IDENT_STATE
+                           | CLOSE_PAREN_STATE
+                           | CONST_INT_STATE
+        CLOSE_PAREN_STATE => CLOSE_PAREN_STATE
+                           | COMMA_STATE
+                           | FIN_STATE
+        COMMA_STATE       => IDENT_STATE
+                           | CONST_INT_STATE
+        CONST_INT_STATE   => CLOSE_PAREN_STATE
+                           | COMMA_STATE
+                           | FIN_STATE
+        FIN_STATE         => IDENT_STATE
+                           | CONST_INT_STATE | CHECKED_FIN_STATE
     """
-    if next_token is not None:
-        if isinstance(current_token, OpenParen):
-            if isinstance(next_token, CloseParen):
-                return _ExpectedState.CLOSE_PAREN
-            if _ExpectedState.OPEN_PAREN in state:
-                if initial:
-                    return _ExpectedState.ENTER_RECURSION | _ExpectedState.FIN_STATE
-                return (
-                    _ExpectedState.ENTER_RECURSION
-                    | _ExpectedState.CLOSE_PAREN
-                    | _ExpectedState.COMMA
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, CloseParen):
-            if _ExpectedState.CLOSE_PAREN in state:
-                if isinstance(prev_token, OpenParen):
-                    if initial:
-                        return _ExpectedState.FIN_STATE
-                    return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-                return _ExpectedState.OUTER_RECURSION
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, Comma):
-            if _ExpectedState.COMMA in state:
-                return (
-                    _ExpectedState.IDENT_NAME
-                    | _ExpectedState.CONST_INT
-                    | _ExpectedState.FUNC_NAME
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, ConstInt):
-            if _ExpectedState.CONST_INT in state:
-                if initial:
-                    return _ExpectedState.FIN_STATE
-                else:
-                    return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, IdentVariable):
-            if isinstance(next_token, OpenParen):
-                if _ExpectedState.FUNC_NAME in state:
-                    return _ExpectedState.OPEN_PAREN
-                raise SyntaxError(_syntax_error_message(state))
-            if _ExpectedState.IDENT_NAME in state:
-                if initial:
-                    return _ExpectedState.FIN_STATE
-                return _ExpectedState.COMMA | _ExpectedState.CLOSE_PAREN
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, Assignment):
-            if _ExpectedState.FIN_STATE:
-                return _ExpectedState.CHECKED_FIN_STATE
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, EndOfStmt):
-            if _ExpectedState.FIN_STATE:
-                return _ExpectedState.CHECKED_FIN_STATE
-            raise SyntaxError(_syntax_error_message(state))
-        else:
-            assert False
-    else:
-        if isinstance(current_token, OpenParen):
-            if _ExpectedState.OPEN_PAREN in state:
-                return (
-                    _ExpectedState.FUNC_NAME
-                    | _ExpectedState.IDENT_NAME
-                    | _ExpectedState.CONST_INT
-                    | _ExpectedState.CLOSE_PAREN
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, CloseParen):
-            if _ExpectedState.CLOSE_PAREN in state:
-                return (
-                    _ExpectedState.COMMA
-                    | _ExpectedState.CLOSE_PAREN
-                    | _ExpectedState.FIN_STATE
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, Comma):
-            if _ExpectedState.COMMA in state:
-                return (
-                    _ExpectedState.IDENT_NAME
-                    | _ExpectedState.CONST_INT
-                    | _ExpectedState.FUNC_NAME
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, ConstInt):
-            if _ExpectedState.CONST_INT in state:
-                return (
-                    _ExpectedState.COMMA
-                    | _ExpectedState.CLOSE_PAREN
-                    | _ExpectedState.FIN_STATE
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, IdentVariable):
-            if _ExpectedState.IDENT_NAME in state or _ExpectedState.FUNC_NAME in state:
-                return (
-                    _ExpectedState.OPEN_PAREN
-                    | _ExpectedState.COMMA
-                    | _ExpectedState.CLOSE_PAREN
-                    | _ExpectedState.FIN_STATE
-                )
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, Assignment):
-            if _ExpectedState.FIN_STATE:
-                return _ExpectedState.CHECKED_FIN_STATE
-            raise SyntaxError(_syntax_error_message(state))
-        elif isinstance(current_token, EndOfStmt):
-            if _ExpectedState.FIN_STATE:
-                return _ExpectedState.CHECKED_FIN_STATE
-            raise SyntaxError(_syntax_error_message(state))
-        else:
-            assert False
+    is_stack_empty = length_of_stack <= 0
+    if isinstance(token, IdentVariable):
+        if _ExpectedState.IDENT_STATE in state:
+            if is_stack_empty:
+                return _ExpectedState.OPEN_PAREN_STATE | _ExpectedState.FIN_STATE
+            return (
+                _ExpectedState.OPEN_PAREN_STATE
+                | _ExpectedState.CLOSE_PAREN_STATE
+                | _ExpectedState.COMMA_STATE
+            )
+    if isinstance(token, OpenParen):
+        if _ExpectedState.OPEN_PAREN_STATE in state:
+            return (
+                _ExpectedState.IDENT_STATE
+                | _ExpectedState.CLOSE_PAREN_STATE
+                | _ExpectedState.CONST_INT_STATE
+            )
+    if isinstance(token, CloseParen):
+        if _ExpectedState.CLOSE_PAREN_STATE in state:
+            assert length_of_stack >= 1
+            if length_of_stack <= 1:
+                return _ExpectedState.FIN_STATE
+            return _ExpectedState.CLOSE_PAREN_STATE | _ExpectedState.COMMA_STATE
+    if isinstance(token, Comma):
+        if _ExpectedState.COMMA_STATE in state:
+            assert not is_stack_empty
+            return _ExpectedState.IDENT_STATE | _ExpectedState.CONST_INT_STATE
+    if isinstance(token, ConstInt):
+        if _ExpectedState.CONST_INT_STATE in state:
+            if is_stack_empty:
+                return _ExpectedState.FIN_STATE
+            return _ExpectedState.CLOSE_PAREN_STATE | _ExpectedState.COMMA_STATE
+    if isinstance(token, Assignment):
+        if _ExpectedState.FIN_STATE in state:
+            assert is_stack_empty
+            return _ExpectedState.IDENT_STATE | _ExpectedState.CONST_INT_STATE
+    if isinstance(token, EndOfStmt):
+        if _ExpectedState.FIN_STATE in state:
+            assert is_stack_empty
+            return _ExpectedState.CHECKED_FIN_STATE
+    raise SyntaxError(
+        _syntax_error_message(state, is_ignoring_before_or_after_assignment)
+    )
 
 
-def _construct_node(
-    tokens: list[_Token],
-    left: int,
-    right: int,
-    initial: bool = True,
-) -> tuple[_Node, int]:
+def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
     """
     根据下标在闭区间 [left, right] 区间内的词元构造 AST
 
@@ -262,64 +165,42 @@ def _construct_node(
         tokens: 词法分析器返回的词元列表
         left: 处理的最左词元的下标
         right: 处理的最右词元的下标
-        initial: 是否第一次运行函数（是则表示当前为递归第一层，否则为其他层）
 
     返回:
-        Tuple(
-            _Node: AST 节点
-            int: 完成后下一步该处理的 Token 对应下标
-        )
+        _Node: AST 节点
     """
-    state: _ExpectedState = (
-        (
-            _ExpectedState.CONST_INT
-            | _ExpectedState.FUNC_NAME
-            | _ExpectedState.IDENT_NAME
+    assert 0 <= left <= right < len(tokens)
+
+    stack: list[tuple[_Node, list[_Token]]] = [(_Node(Assignment()), [])]
+    state = _ExpectedState.IDENT_STATE
+    is_ignoring_before_or_after_assignment = True
+    for i in range(left, right + 1):
+        cur = tokens[i]
+        state = _transfer_state(
+            state, cur, len(stack) - 1, is_ignoring_before_or_after_assignment
         )
-        if initial
-        else (
-            _ExpectedState.CONST_INT
-            | _ExpectedState.FUNC_NAME
-            | _ExpectedState.IDENT_NAME
-            | _ExpectedState.OUTER_RECURSION
-        )
-    )
-    root: Optional[_Token] = None
-    parameters: list[_Node] = []
-    prv: Optional[_Token] = None
-    while True:
-        pre_left = left
-        tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
-        cur, left = tmp
-        if root is None:
-            root = cur
-        if isinstance(cur, EndOfStmt) or isinstance(cur, Assignment):
-            if not initial:
-                raise SyntaxError("未完成的')'")
-            if prv is None:
-                raise SyntaxError(_syntax_error_message(state))
-            state = _transfer_state(state, initial, cur, None, None)
-            assert _ExpectedState.CHECKED_FIN_STATE in state
-            break
-        tmp = _next_ignore_whitespaces_and_annotations(tokens, left, right)
-        nxt, _ = tmp
-        state = _transfer_state(state, initial, cur, prv, nxt)
-        # 是函数导致的期望是'('，准备递归
-        if _ExpectedState.OUTER_RECURSION in state:
-            break
-        prv = cur
-        if _ExpectedState.ENTER_RECURSION in state:
-            tmp = _construct_node(tokens, left, right, False)
-            parameters.append(tmp[0])
-            left = tmp[1]
+        if isinstance(cur, Assignment):
+            is_ignoring_before_or_after_assignment = False
+        if isinstance(cur, CloseParen):
+            *stack, _ = stack
+            root, param = _
+            for p in param:
+                root.append(_Node(p))
+            stack[-1][0].append(root)
             continue
-        if _ExpectedState.COMMA in state or _ExpectedState.CLOSE_PAREN in state:
-            parameters.append(_Node(cur))
-    assert root is not None
-    res = _Node(root, len(parameters))
-    for each in parameters:
-        res.append(each)
-    return (res, pre_left)
+        if isinstance(cur, IdentVariable) or isinstance(cur, ConstInt):
+            stack[-1][1].append(cur)
+        if isinstance(cur, OpenParen):
+            assert left < i
+            stack.append((_Node(tokens[i - 1]), []))
+
+    if not (_ExpectedState.CHECKED_FIN_STATE in state):
+        raise SyntaxError(
+            _syntax_error_message(state, is_ignoring_before_or_after_assignment)
+        )
+    assert len(stack) == 1
+    assert isinstance(tokens[right], EndOfStmt)
+    return stack[0][0]
 
 
 def parser(code: str) -> list[_Node]:
@@ -334,64 +215,13 @@ def parser(code: str) -> list[_Node]:
             _Node: 单个 Stmt 的 AST 结构
         ]: 所有 Stmt 的 AST
     """
-    tokens: list[_Token] = lexer(code)
-    res: list[_Node] = []
-    end_of_stmt_indexes: list[int] = []
-    assignment_indexes: list[int] = []
-    left_index = 0
-    cur_assignment_indexes_index = 0
-    for index in range(len(tokens)):
-        cur = tokens[index]
-        if isinstance(cur, EndOfStmt):
-            end_of_stmt_indexes.append(index)
-        if isinstance(cur, Assignment):
-            assignment_indexes.append(index)
-
-    if len(tokens) <= 0:
-        raise SyntaxError("空代码")
-
-    for right_index in end_of_stmt_indexes:
-        has_assignments_in_cur_stmt = False
-        for i in range(cur_assignment_indexes_index, len(assignment_indexes)):
-            if assignment_indexes[i] < right_index:
-                if has_assignments_in_cur_stmt:
-                    raise SyntaxError("同一个语句中不支持多个'='")
-                has_assignments_in_cur_stmt = True
-            elif assignment_indexes[i] > right_index:
-                break
-            else:
-                assert False, "不期望的分支"
-
-        if has_assignments_in_cur_stmt:
-            cur_assignment_index = assignment_indexes[cur_assignment_indexes_index]
-            # 有 '='
-            root_node = _Node(tokens[cur_assignment_index], 2)
-            # 处理赋值左边
-            # func_name(x, y) = eml(eml(1, x), eml(y, 1));
-            # ^^^^^^^^^^^^^^^^^
-            left_node = _construct_node(tokens, left_index, cur_assignment_index)[0]
-            # 处理赋值右边
-            # func_name(x, y) = eml(eml(1, x), eml(y, 1));
-            #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # `cur_assignment_index + 1` `right_index`
-            right_node = _construct_node(tokens, cur_assignment_index + 1, right_index)[
-                0
-            ]
-
-            root_node.append(left_node)
-            root_node.append(right_node)
-            res.append(root_node)
-        else:
-            # 无 '='
-            res.append(_construct_node(tokens, left_index, right_index, True)[0])
-
-        # 结束部分
-        left_index = right_index + 1
-        if has_assignments_in_cur_stmt:
-            cur_assignment_indexes_index += 1
-
-    if len(end_of_stmt_indexes) <= 0 or _has_next_ignore_whitespaces_and_annotations(
-        tokens, end_of_stmt_indexes[-1] + 1
-    ):
-        raise SyntaxError("未完成的Stmt")
+    tokens = lexer(code)
+    res = []
+    last_end_of_stmt_index = 0
+    for i in range(len(tokens)):
+        if isinstance(tokens[i], EndOfStmt):
+            res.append(_construct_node(tokens, last_end_of_stmt_index, i))
+            last_end_of_stmt_index = i + 1
+    if last_end_of_stmt_index < len(tokens):
+        res.append(_construct_node(tokens, last_end_of_stmt_index, len(tokens) - 1))
     return res
