@@ -9,7 +9,6 @@ from unit.token import (
     WhiteSpace,
     Assignment,
     Annotation,
-    Unknown,
 )
 
 import re
@@ -26,7 +25,19 @@ _annotation_inline_reg = re.compile(r"//[^\n]*")
 _unknown_reg = re.compile(r"[^0-9a-zA-Z_(),;=/]+")
 
 
-def lexer(code: str) -> list[_Token]:
+def lexer(code: str, ignore_annotations_and_whittespaces: bool = True) -> list[_Token]:
+    """
+    词法分析器
+
+    参数:
+        code: 需要转换成词元的代码
+        ignore_annotations_and_whittespaces: 返回的词元列表中不包含空白词元和注释词元
+
+    返回:
+        list[
+            _Token: 代码转词元
+        ]: 所有词元的列表
+    """
     ls = []
     pre_idx = 0
 
@@ -51,18 +62,18 @@ def lexer(code: str) -> list[_Token]:
             ls.append(EndOfStmt())
             pre_idx += _.end()
         elif _ := _white_space_reg.match(cur_str):
-            ls.append(WhiteSpace(_.group()))
+            if not ignore_annotations_and_whittespaces:
+                ls.append(WhiteSpace(_.group()))
             pre_idx += _.end()
         elif _ := _assignment_reg.match(cur_str):
             ls.append(Assignment())
             pre_idx += _.end()
         elif _ := _annotation_inline_reg.match(cur_str):
-            # 忽略注释, 不传递词元
-            # ls.append(Annotation(_.group()))
+            if not ignore_annotations_and_whittespaces:
+                ls.append(Annotation(_.group()))
             pre_idx += _.end()
         elif _ := _unknown_reg.match(cur_str):
-            ls.append(Unknown(_.group()))
-            pre_idx += _.end()
+            raise SyntaxError("未知的词元")
         else:
             assert False
 
