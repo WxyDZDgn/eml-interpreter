@@ -9,9 +9,12 @@ from unit.token import (
     WhiteSpace,
     Assignment,
     Annotation,
+    _calculate_lineno_and_offset,
 )
 
+from typing import Optional
 import re
+
 
 _text_reg = re.compile(r"[_a-zA-Z][_a-zA-Z0-9]*")
 _number_reg = re.compile(r"0|[1-9][0-9]*")
@@ -41,40 +44,53 @@ def lexer(code: str, ignore_annotations_and_whittespaces: bool = True) -> list[_
     ls = []
     pre_idx = 0
 
+    lineno = 1
+    offset = 1
+
     while pre_idx < len(code):
         cur_str = code[pre_idx:]
         if _ := _text_reg.match(cur_str):
-            ls.append(IdentVariable(_.group()))
+            token_str = _.group()
+            ls.append(IdentVariable(token_str, lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _number_reg.match(cur_str):
-            ls.append(ConstInt(int(_.group())))
+            token_str = _.group()
+            ls.append(ConstInt(int(token_str), lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _open_paren_reg.match(cur_str):
-            ls.append(OpenParen())
+            token_str = _.group()
+            ls.append(OpenParen(lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _close_paren_reg.match(cur_str):
-            ls.append(CloseParen())
+            token_str = _.group()
+            ls.append(CloseParen(lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _comma_reg.match(cur_str):
-            ls.append(Comma())
+            token_str = _.group()
+            ls.append(Comma(lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _end_of_stmt_reg.match(cur_str):
-            ls.append(EndOfStmt())
+            token_str = _.group()
+            ls.append(EndOfStmt(lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _white_space_reg.match(cur_str):
+            token_str = _.group()
             if not ignore_annotations_and_whittespaces:
-                ls.append(WhiteSpace(_.group()))
+                ls.append(WhiteSpace(token_str, lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _assignment_reg.match(cur_str):
-            ls.append(Assignment())
+            token_str = _.group()
+            ls.append(Assignment(lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _annotation_inline_reg.match(cur_str):
+            token_str = _.group()
             if not ignore_annotations_and_whittespaces:
-                ls.append(Annotation(_.group()))
+                ls.append(Annotation(token_str, lineno=lineno, offset=offset))
             pre_idx += _.end()
         elif _ := _unknown_reg.match(cur_str):
             raise SyntaxError("未知的词元")
         else:
             assert False
+        lineno, offset = _calculate_lineno_and_offset(token_str, lineno, offset, False)
 
     return ls
