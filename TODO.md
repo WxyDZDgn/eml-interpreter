@@ -15,4 +15,4 @@
 - [] 词元：专门设计针对参数的词元 `priority=69` `difficulty=60`
 - [] 错误代码：使用错误码用于测试，而不需要大量字符串match用于error `priority=32` `difficulty=38`
 - [] 格式错误：细节化格式错误SyntaxError构造函数传入行号列号作为细节指出解析代码的问题 `priority=65` `difficulty=47`
-- [] 注释：细化Parser关于状态机的状态转移注释 `priority=57` `difficulty=35`
+- [x] 注释：细化Parser关于状态机的状态转移注释 `priority=57` `difficulty=35`
