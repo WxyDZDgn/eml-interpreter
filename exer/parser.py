@@ -1,3 +1,5 @@
+from unit.eml_syntax_error import EmlSyntaxError
+from unit.expected_state import ExpectedState
 from unit.token import (
     _Token,
     Comma,
@@ -12,75 +14,15 @@ from unit.node import _Node
 from exer.lexer import lexer
 
 
-from enum import Flag, auto
-
-
-class _ExpectedState(Flag):
-    """
-    状态机判定期望解析的状态
-
-    参数:
-        IDENT_STATE: 期望标识符
-        OPEN_PAREN_STATE: 期望'('
-        CLOSE_PAREN_STATE: 期望')'
-        COMMA_STATE: 期望','
-        CONST_INT_STATE: 期望常数
-        FIN_STATE: 期望'='或';'
-        CHECKED_FIN_STATE: 检查完成
-    """
-
-    IDENT_STATE = auto()
-    OPEN_PAREN_STATE = auto()
-    CLOSE_PAREN_STATE = auto()
-    COMMA_STATE = auto()
-    CONST_INT_STATE = auto()
-    FIN_STATE = auto()
-    CHECKED_FIN_STATE = auto()
-
-    pass
-
-
-def _syntax_error_message(
-    state: _ExpectedState,
-    is_ignoring_before_or_after_assignment: bool = True,
-    is_after_assignment: bool = True,
-) -> str:
-    """
-    状态未达到期望的报错信息
-
-    参数:
-        state: 未达到的期望
-        is_ignoring_before_or_after_assignment: 是否需要区分'='和';'
-        is_after_assignment: 若为 True 则期望';', 否则期望'='
-
-    返回:
-        str, 基于未达到期望的状态返回报错信息
-    """
-    s = []
-    if _ExpectedState.IDENT_STATE in state:
-        s.append("标识符")
-    if _ExpectedState.OPEN_PAREN_STATE in state:
-        s.append("'('")
-    if _ExpectedState.CLOSE_PAREN_STATE in state:
-        s.append("')'")
-    if _ExpectedState.COMMA_STATE in state:
-        s.append("','")
-    if _ExpectedState.CONST_INT_STATE in state:
-        s.append("常数")
-    if _ExpectedState.FIN_STATE in state:
-        if is_ignoring_before_or_after_assignment or not is_after_assignment:
-            s.append("'='")
-        if is_ignoring_before_or_after_assignment or is_after_assignment:
-            s.append("';'")
-    return f"期望{'或'.join(s)}"
+from typing import Optional
 
 
 def _transfer_state(
-    state: _ExpectedState,
+    state: ExpectedState,
     token: _Token,
     length_of_stack: int,
     is_ignoring_before_or_after_assignment: bool = True,
-) -> _ExpectedState:
+) -> ExpectedState:
     """
     状态机状态转换（赋值词元后）
 
@@ -114,47 +56,45 @@ def _transfer_state(
     """
     is_stack_empty = length_of_stack <= 0
     if isinstance(token, IdentVariable):
-        if _ExpectedState.IDENT_STATE in state:
+        if ExpectedState.IDENT_STATE in state:
             if is_stack_empty:
-                return _ExpectedState.OPEN_PAREN_STATE | _ExpectedState.FIN_STATE
+                return ExpectedState.OPEN_PAREN_STATE | ExpectedState.FIN_STATE
             return (
-                _ExpectedState.OPEN_PAREN_STATE
-                | _ExpectedState.CLOSE_PAREN_STATE
-                | _ExpectedState.COMMA_STATE
+                ExpectedState.OPEN_PAREN_STATE
+                | ExpectedState.CLOSE_PAREN_STATE
+                | ExpectedState.COMMA_STATE
             )
     if isinstance(token, OpenParen):
-        if _ExpectedState.OPEN_PAREN_STATE in state:
+        if ExpectedState.OPEN_PAREN_STATE in state:
             return (
-                _ExpectedState.IDENT_STATE
-                | _ExpectedState.CLOSE_PAREN_STATE
-                | _ExpectedState.CONST_INT_STATE
+                ExpectedState.IDENT_STATE
+                | ExpectedState.CLOSE_PAREN_STATE
+                | ExpectedState.CONST_INT_STATE
             )
     if isinstance(token, CloseParen):
-        if _ExpectedState.CLOSE_PAREN_STATE in state:
+        if ExpectedState.CLOSE_PAREN_STATE in state:
             assert length_of_stack >= 1
             if length_of_stack <= 1:
-                return _ExpectedState.FIN_STATE
-            return _ExpectedState.CLOSE_PAREN_STATE | _ExpectedState.COMMA_STATE
+                return ExpectedState.FIN_STATE
+            return ExpectedState.CLOSE_PAREN_STATE | ExpectedState.COMMA_STATE
     if isinstance(token, Comma):
-        if _ExpectedState.COMMA_STATE in state:
+        if ExpectedState.COMMA_STATE in state:
             assert not is_stack_empty
-            return _ExpectedState.IDENT_STATE | _ExpectedState.CONST_INT_STATE
+            return ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     if isinstance(token, ConstInt):
-        if _ExpectedState.CONST_INT_STATE in state:
+        if ExpectedState.CONST_INT_STATE in state:
             if is_stack_empty:
-                return _ExpectedState.FIN_STATE
-            return _ExpectedState.CLOSE_PAREN_STATE | _ExpectedState.COMMA_STATE
+                return ExpectedState.FIN_STATE
+            return ExpectedState.CLOSE_PAREN_STATE | ExpectedState.COMMA_STATE
     if isinstance(token, Assignment):
-        if _ExpectedState.FIN_STATE in state:
+        if ExpectedState.FIN_STATE in state:
             assert is_stack_empty
-            return _ExpectedState.IDENT_STATE | _ExpectedState.CONST_INT_STATE
+            return ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     if isinstance(token, EndOfStmt):
-        if _ExpectedState.FIN_STATE in state:
+        if ExpectedState.FIN_STATE in state:
             assert is_stack_empty
-            return _ExpectedState.CHECKED_FIN_STATE
-    raise SyntaxError(
-        _syntax_error_message(state, is_ignoring_before_or_after_assignment)
-    )
+            return ExpectedState.CHECKED_FIN_STATE
+    raise EmlSyntaxError(state, token, is_ignoring_before_or_after_assignment)
 
 
 def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
@@ -171,15 +111,21 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
     """
     assert 0 <= left <= right < len(tokens)
 
-    stack: list[tuple[_Node, list[_Token]]] = [(_Node(Assignment()), [])]
-    state = _ExpectedState.IDENT_STATE
+    stack: list[tuple[_Node, list[_Token]]] = [(_Node(), [])]
+    state = ExpectedState.IDENT_STATE
     is_ignoring_before_or_after_assignment = True
+    root_token: Optional[_Token] = None
     for i in range(left, right + 1):
         cur = tokens[i]
         state = _transfer_state(
             state, cur, len(stack) - 1, is_ignoring_before_or_after_assignment
         )
+        if isinstance(cur, EndOfStmt):
+            assert i >= right
+        if root_token is None:
+            root_token = cur
         if isinstance(cur, Assignment):
+            root_token = cur
             is_ignoring_before_or_after_assignment = False
         if isinstance(cur, CloseParen):
             *stack, _ = stack
@@ -194,12 +140,13 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
             assert left < i
             stack.append((_Node(tokens[i - 1]), []))
 
-    if not (_ExpectedState.CHECKED_FIN_STATE in state):
-        raise SyntaxError(
-            _syntax_error_message(state, is_ignoring_before_or_after_assignment)
+    if not (ExpectedState.CHECKED_FIN_STATE in state):
+        raise EmlSyntaxError(
+            state, tokens[right], is_ignoring_before_or_after_assignment
         )
     assert len(stack) == 1
     assert isinstance(tokens[right], EndOfStmt)
+    stack[0][0].token = root_token
     return stack[0][0]
 
 
