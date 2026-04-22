@@ -9,6 +9,7 @@ from typing import Optional
     [
         ("h() == 1;", "期望标识符或常数"),
         ("h() = = 1;", "期望标识符或常数"),
+        ("h() = 1 = 1;", None), # 语法允许, 语义不允许（类型推断错误）
         ("h() = 1;", None),
         (
             """e(x) == eml(x, 1);
@@ -42,7 +43,7 @@ from typing import Optional
         ),
     ],
 )
-def test_parser_error_caused_by_assignments(code: str, error: Optional[str]):
+def test_parser_syntax_error_caused_by_assignments(code: str, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
             parser(code)
@@ -87,7 +88,7 @@ def test_parser_error_caused_by_assignments(code: str, error: Optional[str]):
         ),
     ],
 )
-def test_parser_error_caused_by_unfinished_stmt(code: str, error: Optional[str]):
+def test_parser_syntax_error_caused_by_unfinished_stmt(code: str, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
             parser(code)
@@ -244,7 +245,7 @@ def test_parser_error_caused_by_unfinished_stmt(code: str, error: Optional[str])
         (" f(1, f(2, 3), f(4, 5, 6), f, ) = f() ;", True),
     ],
 )
-def test_parser_error_overall(code: str, error: bool):
+def test_parser_syntax_error_overall(code: str, error: bool):
     if error:
         with pytest.raises(SyntaxError):
             parser(code)
