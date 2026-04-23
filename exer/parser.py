@@ -1,4 +1,4 @@
-from unit.eml_syntax_error import EmlSyntaxError
+from unit.eml_syntax_error import raise_syntax_error
 from unit.expected_state import ExpectedState
 from unit.token import (
     _Token,
@@ -94,7 +94,9 @@ def _transfer_state(
         if ExpectedState.FIN_STATE in state:
             assert is_stack_empty
             return ExpectedState.CHECKED_FIN_STATE
-    raise EmlSyntaxError(state, token, is_ignoring_before_or_after_assignment)
+
+    raise_syntax_error(state, token, is_ignoring_before_or_after_assignment)
+    assert False
 
 
 def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
@@ -141,9 +143,7 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
             stack.append((_Node(tokens[i - 1]), []))
 
     if not (ExpectedState.CHECKED_FIN_STATE in state):
-        raise EmlSyntaxError(
-            state, tokens[right], is_ignoring_before_or_after_assignment
-        )
+        raise_syntax_error(state, tokens[right], is_ignoring_before_or_after_assignment)
     assert len(stack) == 1
     assert isinstance(tokens[right], EndOfStmt)
     stack[0][0].token = root_token

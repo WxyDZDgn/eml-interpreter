@@ -39,19 +39,17 @@ def _syntax_error_message(
     return f"期望{'或'.join(s)}"
 
 
-class EmlSyntaxError(SyntaxError):
-    def __init__(
-        self,
-        state: ExpectedState,
-        token: _Token,
-        is_ignoring_before_or_after_assignment: bool = True,
-        is_after_assignment: bool = True,
-    ) -> None:
-        super().__init__(
-            _syntax_error_message(
-                ExpectedState.UNKNOWN_STATE if isinstance(token, Unknown) else state,
-                is_ignoring_before_or_after_assignment,
-                is_after_assignment,
-            ),
-            token.info,
-        )
+def raise_syntax_error(
+    state: ExpectedState,
+    token: _Token,
+    is_ignoring_before_or_after_assignment: bool = True,
+    is_after_assignment: bool = True,
+) -> None:
+    raise SyntaxError(
+        _syntax_error_message(
+            ExpectedState.UNKNOWN_STATE if isinstance(token, Unknown) else state,
+            is_ignoring_before_or_after_assignment,
+            is_after_assignment,
+        ),
+        token.info,
+    )
