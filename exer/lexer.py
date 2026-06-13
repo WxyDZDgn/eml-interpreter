@@ -12,9 +12,7 @@ from unit.token import (
     _calculate_lineno_and_offset,
 )
 
-from typing import Optional
 import re
-
 
 _text_reg = re.compile(r"[_a-zA-Z][_a-zA-Z0-9]*")
 _number_reg = re.compile(r"0|[1-9][0-9]*")
@@ -28,7 +26,7 @@ _annotation_inline_reg = re.compile(r"//[^\n]*")
 _unknown_reg = re.compile(r"[^0-9a-zA-Z_(),;=/]+")
 
 
-def lexer(code: str, ignore_annotations_and_whittespaces: bool = True) -> list[_Token]:
+def lexer(code: str, ignore_annotations_and_whitespaces: bool = True) -> list[_Token]:
     """
     词法分析器
 
@@ -89,7 +87,7 @@ def lexer(code: str, ignore_annotations_and_whittespaces: bool = True) -> list[_
             pre_idx += _.end()
         elif _ := _white_space_reg.match(cur_str):
             token_str = _.group()
-            if not ignore_annotations_and_whittespaces:
+            if not ignore_annotations_and_whitespaces:
                 ls.append(
                     WhiteSpace(
                         token_str,
@@ -107,7 +105,7 @@ def lexer(code: str, ignore_annotations_and_whittespaces: bool = True) -> list[_
             pre_idx += _.end()
         elif _ := _annotation_inline_reg.match(cur_str):
             token_str = _.group()
-            if not ignore_annotations_and_whittespaces:
+            if not ignore_annotations_and_whitespaces:
                 ls.append(
                     Annotation(
                         token_str,

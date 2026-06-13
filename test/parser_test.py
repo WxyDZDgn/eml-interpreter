@@ -5,99 +5,99 @@ from typing import Optional
 
 
 @pytest.mark.parametrize(
-    "code, error",
+    "_code, error",
     [
         ("h() == 1;", "期望标识符或常数"),
         ("h() = = 1;", "期望标识符或常数"),
-        ("h() = 1 = 1;", None), # 语法允许, 语义不允许（类型推断错误）
+        ("h() = 1 = 1;", None),  # 语法允许, 语义不允许（类型推断错误）
         ("h() = 1;", None),
         (
-            """e(x) == eml(x, 1);
-            ln(x) = eml(1, eml(eml(1, x), 1));""",
-            "期望标识符或常数",
+                """e(x) == eml(x, 1);
+                ln(x) = eml(1, eml(eml(1, x), 1));""",
+                "期望标识符或常数",
         ),
         (
-            """e(x) = eml(x, 1);
-            ln(x) == eml(1, eml(eml(1, x), 1));""",
-            "期望标识符或常数",
+                """e(x) = eml(x, 1);
+                ln(x) == eml(1, eml(eml(1, x), 1));""",
+                "期望标识符或常数",
         ),
         (
-            """e(x) = eml(x, 1);
-            ln(x) = eml(1, eml(eml(1, x), 1));""",
-            None,
+                """e(x) = eml(x, 1);
+                ln(x) = eml(1, eml(eml(1, x), 1));""",
+                None,
         ),
         (
-            """e(x) == eml(x, 1); // ==-+=++;==?????
-            ln(x) = eml(1, eml(eml(1, x), 1)); // ??==;-=+???  cds""",
-            "期望标识符或常数",
+                """e(x) == eml(x, 1); // ==-+=++;==?????
+                ln(x) = eml(1, eml(eml(1, x), 1)); // ??==;-=+???  cds""",
+                "期望标识符或常数",
         ),
         (
-            """e(x) = eml(x, 1);  // ==-+=++;==?????
-            ln(x) == eml(1, eml(eml(1, x), 1));// ??==;-=+???  cds""",
-            "期望标识符或常数",
+                """e(x) = eml(x, 1);  // ==-+=++;==?????
+                ln(x) == eml(1, eml(eml(1, x), 1));// ??==;-=+???  cds""",
+                "期望标识符或常数",
         ),
         (
-            """e(x) = eml(x, 1);  // ==-+=++;==?????
-            ln(x) = eml(1, eml(eml(1, x), 1)); // ??==;-=+???  cds""",
-            None,
+                """e(x) = eml(x, 1);  // ==-+=++;==?????
+                ln(x) = eml(1, eml(eml(1, x), 1)); // ??==;-=+???  cds""",
+                None,
         ),
     ],
 )
-def test_parser_syntax_error_caused_by_assignments(code: str, error: Optional[str]):
+def test_parser_syntax_error_caused_by_assignments(_code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            parser(code)
+            parser(_code)
     else:
-        parser(code)
+        parser(_code)
 
 
 @pytest.mark.parametrize(
-    "code, error",
+    "_code, error",
     [
         ("h() = 1", "期望';'"),
         ("h() = 1;", None),
         (
-            """e(x) = eml(x, 1)
-            ln(x) = eml(1, eml(eml(1, x), 1));""",
-            "期望';'",
+                """e(x) = eml(x, 1)
+                ln(x) = eml(1, eml(eml(1, x), 1));""",
+                "期望';'",
         ),
         (
-            """e(x) = eml(x, 1);
-            ln(x) = eml(1, eml(eml(1, x), 1))""",
-            "期望';'",
+                """e(x) = eml(x, 1);
+                ln(x) = eml(1, eml(eml(1, x), 1))""",
+                "期望';'",
         ),
         (
-            """e(x) = eml(x, 1);
-            ln(x) = eml(1, eml(eml(1, x), 1));""",
-            None,
+                """e(x) = eml(x, 1);
+                ln(x) = eml(1, eml(eml(1, x), 1));""",
+                None,
         ),
         (
-            """e(x) = eml(x, 1) // ??==;-=+???  cds
-            ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????""",
-            "期望';'",
+                """e(x) = eml(x, 1) // ??==;-=+???  cds
+                ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????""",
+                "期望';'",
         ),
         (
-            """e(x) = eml(x, 1); // ??==;-=+???  cds
-            ln(x) = eml(1, eml(eml(1, x), 1)) // ==-+=++;==?????""",
-            "期望';'",
+                """e(x) = eml(x, 1); // ??==;-=+???  cds
+                ln(x) = eml(1, eml(eml(1, x), 1)) // ==-+=++;==?????""",
+                "期望';'",
         ),
         (
-            """e(x) = eml(x, 1); // ??==;-=+???  cds
-            ln(x) = eml(1, eml(eml(1, x), 1)); // ==-+=++;==?????""",
-            None,
+                """e(x) = eml(x, 1); // ??==;-=+???  cds
+                ln(x) = eml(1, eml(eml(1, x), 1)); // ==-+=++;==?????""",
+                None,
         ),
     ],
 )
-def test_parser_syntax_error_caused_by_unfinished_stmt(code: str, error: Optional[str]):
+def test_parser_syntax_error_caused_by_unfinished_stmt(_code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            parser(code)
+            parser(_code)
     else:
-        parser(code)
+        parser(_code)
 
 
 @pytest.mark.parametrize(
-    "code, error",
+    "_code, error",
     [
         ("f() = f(1, f(2, 3), f(4, 5, 6), f, g);", False),
 
@@ -245,12 +245,13 @@ def test_parser_syntax_error_caused_by_unfinished_stmt(code: str, error: Optiona
         (" f(1, f(2, 3), f(4, 5, 6), f, ) = f() ;", True),
     ],
 )
-def test_parser_syntax_error_overall(code: str, error: bool):
+def test_parser_syntax_error_overall(_code, error: bool):
     if error:
         with pytest.raises(SyntaxError):
-            parser(code)
+            parser(_code)
     else:
-        parser(code)
+        parser(_code)
+
 
 if __name__ == "__main__":
     code = """e(x) = eml(x, 1)

@@ -2,12 +2,11 @@ from typing import Optional
 
 
 def _calculate_lineno_and_offset(
-    text: str, lineno: int, offset: int
-) -> tuple[int, int]:
-
-    if lineno is None and offset is None and text is None:
-        return (None, None)
-    elif lineno is not None and offset is not None and text is not None:
+        text: str, lineno: Optional[int], offset: Optional[int]
+) -> tuple[Optional[int], Optional[int]]:
+    if lineno is None and offset is None:
+        return None, None
+    elif lineno is not None and offset is not None:
         new_line_count = text.count("\n")
         new_line_rfind = text.rfind("\n")
 
@@ -15,7 +14,7 @@ def _calculate_lineno_and_offset(
         next_offset = (
             (offset + len(text)) if new_line_rfind < 0 else (len(text) - new_line_rfind)
         )
-        return (next_lineno, next_offset)
+        return next_lineno, next_offset
     else:
         assert False
 
@@ -32,7 +31,7 @@ class _Token:
     """
 
     def __init__(
-        self, token_str: str, token_value: object, token_name: str = "", **kwargs
+            self, token_str: str, token_value: object, token_name: str = "", **kwargs
     ) -> None:
         self.token_name = (
             token_name if len(token_name) <= 0 else str(self.__class__.__name__)

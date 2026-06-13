@@ -13,15 +13,14 @@ from unit.token import (
 from unit.node import _Node
 from exer.lexer import lexer
 
-
 from typing import Optional
 
 
 def _transfer_state(
-    state: ExpectedState,
-    token: _Token,
-    length_of_stack: int,
-    is_ignoring_before_or_after_assignment: bool = True,
+        state: ExpectedState,
+        token: _Token,
+        length_of_stack: int,
+        is_ignoring_before_or_after_assignment: bool = True,
 ) -> ExpectedState:
     """
     状态机状态转换（赋值词元后）
@@ -60,16 +59,16 @@ def _transfer_state(
             if is_stack_empty:
                 return ExpectedState.OPEN_PAREN_STATE | ExpectedState.FIN_STATE
             return (
-                ExpectedState.OPEN_PAREN_STATE
-                | ExpectedState.CLOSE_PAREN_STATE
-                | ExpectedState.COMMA_STATE
+                    ExpectedState.OPEN_PAREN_STATE
+                    | ExpectedState.CLOSE_PAREN_STATE
+                    | ExpectedState.COMMA_STATE
             )
     if isinstance(token, OpenParen):
         if ExpectedState.OPEN_PAREN_STATE in state:
             return (
-                ExpectedState.IDENT_STATE
-                | ExpectedState.CLOSE_PAREN_STATE
-                | ExpectedState.CONST_INT_STATE
+                    ExpectedState.IDENT_STATE
+                    | ExpectedState.CLOSE_PAREN_STATE
+                    | ExpectedState.CONST_INT_STATE
             )
     if isinstance(token, CloseParen):
         if ExpectedState.CLOSE_PAREN_STATE in state:
