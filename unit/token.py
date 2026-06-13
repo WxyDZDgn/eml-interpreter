@@ -44,7 +44,12 @@ class _Token:
         offset = kwargs["offset"] if "offset" in kwargs.keys() else None
         text = kwargs["text"] if "text" in kwargs.keys() else None
 
-        assert lineno is not None and offset is not None
+        if lineno is None and offset is None:
+            pass
+        elif lineno is not None and offset is not None:
+            assert isinstance(lineno, int) and isinstance(offset, int)
+        else:
+            assert False
 
         end_lineno, end_offset = _calculate_lineno_and_offset(token_str, lineno, offset)
 
