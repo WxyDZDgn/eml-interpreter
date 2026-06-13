@@ -3,9 +3,9 @@ from unit.token import _Token, Unknown
 
 
 def _syntax_error_message(
-    state: ExpectedState,
-    is_ignoring_before_or_after_assignment: bool,
-    is_after_assignment: bool,
+        state: ExpectedState,
+        is_ignoring_before_or_after_assignment: bool,
+        is_after_assignment: bool,
 ) -> str:
     """
     状态未达到期望的报错信息
@@ -40,10 +40,10 @@ def _syntax_error_message(
 
 
 def raise_syntax_error(
-    state: ExpectedState,
-    token: _Token,
-    is_ignoring_before_or_after_assignment: bool = True,
-    is_after_assignment: bool = True,
+        state: ExpectedState,
+        token: _Token,
+        is_ignoring_before_or_after_assignment: bool = True,
+        is_after_assignment: bool = True,
 ) -> None:
     raise SyntaxError(
         _syntax_error_message(
