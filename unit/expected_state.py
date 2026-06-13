@@ -1,7 +1,7 @@
-from enum import Flag, auto
+from flags import Flags
 
 
-class ExpectedState(Flag):
+class ExpectedState(Flags):
     """
     状态机判定期望解析的状态
 
@@ -15,14 +15,12 @@ class ExpectedState(Flag):
         CHECKED_FIN_STATE: 检查完成
     """
 
-    IDENT_STATE = auto()
-    OPEN_PAREN_STATE = auto()
-    CLOSE_PAREN_STATE = auto()
-    COMMA_STATE = auto()
-    CONST_INT_STATE = auto()
-    FIN_STATE = auto()
-    CHECKED_FIN_STATE = auto()
+    IDENT_STATE = ()
+    OPEN_PAREN_STATE = ()
+    CLOSE_PAREN_STATE = ()
+    COMMA_STATE = ()
+    CONST_INT_STATE = ()
+    FIN_STATE = ()
+    CHECKED_FIN_STATE = ()
 
-    UNKNOWN_STATE = auto()
-
-    pass
+    UNKNOWN_STATE = ()
