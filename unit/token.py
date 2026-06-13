@@ -1,7 +1,7 @@
 from typing import Optional
 
 
-def _calculate_lineno_and_offset(
+def calculate_lineno_and_offset(
         text: str, lineno: Optional[int], offset: Optional[int]
 ) -> tuple[Optional[int], Optional[int]]:
     if lineno is None and offset is None:
@@ -19,7 +19,7 @@ def _calculate_lineno_and_offset(
         assert False
 
 
-class _Token:
+class Token:
     """
     词法单元抽象类
 
@@ -51,7 +51,7 @@ class _Token:
         else:
             assert False
 
-        end_lineno, end_offset = _calculate_lineno_and_offset(token_str, lineno, offset)
+        end_lineno, end_offset = calculate_lineno_and_offset(token_str, lineno, offset)
 
         self.info: tuple[
             Optional[str],
@@ -66,7 +66,7 @@ class _Token:
         return f"<{str(self.__class__.__name__)}: '{self.token_str}'>"
 
 
-class FuncEml(_Token):
+class FuncEml(Token):
     """
     核心函数 Exp Minus Ln 词元, 特指不可被重新赋值
     """
@@ -75,7 +75,7 @@ class FuncEml(_Token):
         super().__init__("eml", None, **kwargs)
 
 
-class OpenParen(_Token):
+class OpenParen(Token):
     """
     左圆括号词元
     """
@@ -84,7 +84,7 @@ class OpenParen(_Token):
         super().__init__("(", None, **kwargs)
 
 
-class CloseParen(_Token):
+class CloseParen(Token):
     """
     右圆括号词元
     """
@@ -93,7 +93,7 @@ class CloseParen(_Token):
         super().__init__(")", None, **kwargs)
 
 
-class Comma(_Token):
+class Comma(Token):
     """
     逗号词元
     """
@@ -102,7 +102,7 @@ class Comma(_Token):
         super().__init__(",", None, **kwargs)
 
 
-class ConstInt(_Token):
+class ConstInt(Token):
     """
     整型常量词元
     """
@@ -111,7 +111,7 @@ class ConstInt(_Token):
         super().__init__(str(token_value), token_value, **kwargs)
 
 
-class EndOfStmt(_Token):
+class EndOfStmt(Token):
     """
     语句结束词元
     """
@@ -120,7 +120,7 @@ class EndOfStmt(_Token):
         super().__init__(";", None, **kwargs)
 
 
-class IdentVariable(_Token):
+class IdentVariable(Token):
     """
     标识变量（函数名或变量名）词元
     """
@@ -129,7 +129,7 @@ class IdentVariable(_Token):
         super().__init__(token_value, token_value, **kwargs)
 
 
-class WhiteSpace(_Token):
+class WhiteSpace(Token):
     """
     空白字符（制表符，空格等）
     """
@@ -140,7 +140,7 @@ class WhiteSpace(_Token):
         )
 
 
-class Assignment(_Token):
+class Assignment(Token):
     """
     赋值词元
     """
@@ -149,7 +149,7 @@ class Assignment(_Token):
         super().__init__("=", None, **kwargs)
 
 
-class Annotation(_Token):
+class Annotation(Token):
     """注释词元"""
 
     def __init__(self, token_value: str, **kwargs) -> None:
@@ -158,7 +158,7 @@ class Annotation(_Token):
         )
 
 
-class Unknown(_Token):
+class Unknown(Token):
     """
     未知词元
     """
@@ -169,7 +169,7 @@ class Unknown(_Token):
         )
 
 
-class ParameterVariable(_Token):
+class ParameterVariable(Token):
     """
     变量（特指函数参数，AST 专用）词元
     """

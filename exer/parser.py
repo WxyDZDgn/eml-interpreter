@@ -1,7 +1,7 @@
 from unit.eml_syntax_error import raise_syntax_error
 from unit.expected_state import ExpectedState
 from unit.token import (
-    _Token,
+    Token,
     Comma,
     ConstInt,
     IdentVariable,
@@ -10,7 +10,7 @@ from unit.token import (
     OpenParen,
     CloseParen,
 )
-from unit.node import _Node
+from unit.node import Node
 from exer.lexer import lexer
 
 from typing import Optional
@@ -18,7 +18,7 @@ from typing import Optional
 
 def _transfer_state(
         state: ExpectedState,
-        token: _Token,
+        token: Token,
         length_of_stack: int,
         is_ignoring_before_or_after_assignment: bool = True,
 ) -> ExpectedState:
@@ -98,7 +98,7 @@ def _transfer_state(
     assert False
 
 
-def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
+def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
     """
     根据下标在闭区间 [left, right] 区间内的词元构造 AST
 
@@ -112,10 +112,10 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
     """
     assert 0 <= left <= right < len(tokens)
 
-    stack: list[tuple[_Node, list[_Token]]] = [(_Node(), [])]
+    stack: list[tuple[Node, list[Token]]] = [(Node(), [])]
     state = ExpectedState.IDENT_STATE
     is_ignoring_before_or_after_assignment = True
-    root_token: Optional[_Token] = None
+    root_token: Optional[Token] = None
     for i in range(left, right + 1):
         cur = tokens[i]
         state = _transfer_state(
@@ -132,14 +132,14 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
             *stack, _ = stack
             root, param = _
             for p in param:
-                root.append(_Node(p))
+                root.append(Node(p))
             stack[-1][0].append(root)
             continue
         if isinstance(cur, IdentVariable) or isinstance(cur, ConstInt):
             stack[-1][1].append(cur)
         if isinstance(cur, OpenParen):
             assert left < i
-            stack.append((_Node(tokens[i - 1]), []))
+            stack.append((Node(tokens[i - 1]), []))
 
     if not (ExpectedState.CHECKED_FIN_STATE in state):
         raise_syntax_error(state, tokens[right], is_ignoring_before_or_after_assignment)
@@ -149,7 +149,7 @@ def _construct_node(tokens: list[_Token], left: int, right: int) -> _Node:
     return stack[0][0]
 
 
-def parser(code: str) -> list[_Node]:
+def parser(code: str) -> list[Node]:
     """
     语法分析器，根据代码分析格式并为每一条 Stmt 得到一个 AST，组合返回一个列表
 

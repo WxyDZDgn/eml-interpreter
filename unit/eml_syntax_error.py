@@ -1,5 +1,5 @@
 from unit.expected_state import ExpectedState
-from unit.token import _Token, Unknown
+from unit.token import Token, Unknown
 
 
 def _syntax_error_message(
@@ -41,7 +41,7 @@ def _syntax_error_message(
 
 def raise_syntax_error(
         state: ExpectedState,
-        token: _Token,
+        token: Token,
         is_ignoring_before_or_after_assignment: bool = True,
         is_after_assignment: bool = True,
 ) -> None:

@@ -1,5 +1,5 @@
 from unit.token import (
-    _Token,
+    Token,
     IdentVariable,
     ConstInt,
     OpenParen,
@@ -9,7 +9,7 @@ from unit.token import (
     WhiteSpace,
     Assignment,
     Annotation,
-    _calculate_lineno_and_offset,
+    calculate_lineno_and_offset,
 )
 
 import re
@@ -26,7 +26,7 @@ _annotation_inline_reg = re.compile(r"//[^\n]*")
 _unknown_reg = re.compile(r"[^0-9a-zA-Z_(),;=/]+")
 
 
-def lexer(code: str, ignore_annotations_and_whitespaces: bool = True) -> list[_Token]:
+def lexer(code: str, ignore_annotations_and_whitespaces: bool = True) -> list[Token]:
     """
     词法分析器
 
@@ -119,6 +119,6 @@ def lexer(code: str, ignore_annotations_and_whitespaces: bool = True) -> list[_T
             raise SyntaxError("未知的词元")
         else:
             assert False
-        lineno, offset = _calculate_lineno_and_offset(token_str, lineno, offset)
+        lineno, offset = calculate_lineno_and_offset(token_str, lineno, offset)
 
     return ls

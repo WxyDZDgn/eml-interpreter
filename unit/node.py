@@ -1,12 +1,12 @@
-from unit.token import _Token
+from unit.token import Token
 
 from typing import Self, Optional
 
 
-class _Node:
-    def __init__(self, token: Optional[_Token] = None) -> None:
-        self.token: Optional[_Token] = token
-        self.params: list[_Node] = []
+class Node:
+    def __init__(self, token: Optional[Token] = None) -> None:
+        self.token: Optional[Token] = token
+        self.params: list[Node] = []
 
     def append(self, node: Self) -> None:
         self.params.append(node)
