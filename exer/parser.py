@@ -32,7 +32,7 @@ def _transfer_state(
         is_ignoring_before_or_after_assignment: 用于细化报错信息, 见 `_syntax_error_message`
 
     返回:
-        _ExpectedState: 返回下一个的期望状态
+        ExpectedState: 返回下一个的期望状态
 
     规则:
         IDENT_STATE       => OPEN_PAREN_STATE
@@ -108,7 +108,7 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
         right: 处理的最右词元的下标
 
     返回:
-        _Node: AST 节点
+        Node: AST 节点
     """
     assert 0 <= left <= right < len(tokens)
 
@@ -158,7 +158,7 @@ def parser(code: str) -> list[Node]:
 
     返回:
         list[
-            _Node: 单个 Stmt 的 AST 结构
+            Node: 单个 Stmt 的 AST 结构
         ]: 所有 Stmt 的 AST
     """
     tokens = lexer(code)

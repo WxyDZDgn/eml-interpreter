@@ -36,7 +36,7 @@ def lexer(code: str, ignore_annotations_and_whitespaces: bool = True) -> list[To
 
     返回:
         list[
-            _Token: 代码转词元
+            Token: 代码转词元
         ]: 所有词元的列表
     """
     ls = []
