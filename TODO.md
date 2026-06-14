@@ -16,3 +16,4 @@
 - [] 错误代码：使用错误码用于测试，而不需要大量字符串match用于error `priority=32` `difficulty=38`
 - [x] 格式错误：细节化格式错误SyntaxError构造函数传入行号列号作为细节指出解析代码的问题 `priority=65` `difficulty=47`
 - [x] 注释：细化Parser关于状态机的状态转移注释 `priority=57` `difficulty=35`
+- [] 词元：在每个类型的词元重载append方法，assert限制特定方法的append次数，如Assignment限制次数为2 `priority=57` `difficulty=35`
