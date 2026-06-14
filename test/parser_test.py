@@ -251,11 +251,3 @@ def test_parser_syntax_error_overall(_code, error: bool):
             parser(_code)
     else:
         parser(_code)
-
-
-if __name__ == "__main__":
-    code = """e(x) = eml(x, 1)
-            ln(x) = eml(1, eml(eml(1, x), 1));"""
-    parser(code)
-    """e(x) = eml(x, 1) // ??==;-=+???  cds
-            ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????"""
