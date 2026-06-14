@@ -169,10 +169,23 @@ class Unknown(Token):
         )
 
 
-class ParameterVariable(Token):
+class ParameterVariable(IdentVariable):
     """
     变量（特指函数参数，AST 专用）词元
     """
 
-    def __init__(self, token_value: str, **kwargs) -> None:
-        super().__init__(token_value, token_value, **kwargs)
+    def __init__(self, ident_variable: IdentVariable):
+        assert isinstance(ident_variable.token_value, str)
+        info = ident_variable.info[:4]
+        super().__init__(ident_variable.token_value, file_name=info[0], lineno=info[1], offset=info[2], text=info[3])
+
+
+class FunctionVariable(IdentVariable):
+    """
+    变量（特指函数参数，AST 专用）词元
+    """
+
+    def __init__(self, ident_variable: IdentVariable):
+        assert isinstance(ident_variable.token_value, str)
+        info = ident_variable.info[:4]
+        super().__init__(ident_variable.token_value, file_name=info[0], lineno=info[1], offset=info[2], text=info[3])

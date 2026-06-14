@@ -13,6 +13,8 @@ if __name__ == '__main__':
         Assignment(),
         Unknown("?????"),
         Annotation("//urdsnvfsd"),
+        ParameterVariable(IdentVariable("x")),
+        FunctionVariable(IdentVariable("f")),
     ]
     ls = map(str, ls)
     print('\n'.join(ls))
