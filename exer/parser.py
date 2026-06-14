@@ -113,7 +113,7 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
     assert 0 <= left <= right < len(tokens)
 
     stack: list[tuple[Node, list[Token]]] = [(Node(), [])]
-    state = ExpectedState.IDENT_STATE
+    state = ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     is_ignoring_before_or_after_assignment = True
     root_token: Optional[Token] = None
     for i in range(left, right + 1):
