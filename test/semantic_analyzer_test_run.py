@@ -9,6 +9,9 @@ if __name__ == '__main__':
     print(semantic_analyzer(code))
 
 """
+e(x) = eml(x, 1) ;// ??==;-=+???  cds
+                ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????
+
 <Node: '<Execute: 'execute'>' [
     <Node: '<Assignment: '='>' [
         <Node: '<IdentVariable: 'e'>' [
