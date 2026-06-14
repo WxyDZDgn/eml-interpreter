@@ -189,3 +189,12 @@ class FunctionVariable(IdentVariable):
         assert isinstance(ident_variable.token_value, str)
         info = ident_variable.info[:4]
         super().__init__(ident_variable.token_value, file_name=info[0], lineno=info[1], offset=info[2], text=info[3])
+
+
+class Execute(Token):
+    """
+    执行词元（AST专用）
+    """
+
+    def __init__(self):
+        super().__init__("execute", None)
