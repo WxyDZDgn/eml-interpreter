@@ -51,7 +51,8 @@ def _transfer_state(
                            | COMMA_STATE
                            | FIN_STATE
         FIN_STATE         => IDENT_STATE
-                           | CONST_INT_STATE | CHECKED_FIN_STATE
+                           | CONST_INT_STATE
+                           | CHECKED_FIN_STATE
     """
     is_stack_empty = length_of_stack <= 0
     if isinstance(token, IdentVariable):

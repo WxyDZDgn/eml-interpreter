@@ -19,4 +19,3 @@ def semantic_analyzer(code: str) -> Node:
         # 在这里检查语义
         root.append(node)
     return root
-
