@@ -17,3 +17,4 @@
 - [x] 格式错误：细节化格式错误SyntaxError构造函数传入行号列号作为细节指出解析代码的问题 `priority=65` `difficulty=47`
 - [x] 注释：细化Parser关于状态机的状态转移注释 `priority=57` `difficulty=35`
 - [] 词元：在每个类型的词元重载append方法，assert限制特定方法的append次数，如Assignment限制次数为2 `priority=50` `difficulty=30`
+- [] 符号表：自定义结构，定长可修改，初步打算使用class专门定义字典的value `priority=54` `difficulty=20`
