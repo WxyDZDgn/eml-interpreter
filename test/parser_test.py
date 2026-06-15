@@ -10,7 +10,7 @@ from typing import Optional
     [
         ("h() == 1;", "期望标识符或常数"),
         ("h() = = 1;", "期望标识符或常数"),
-        ("h() = 1 = 1;", None),  # 语法允许, 语义不允许（类型推断错误）
+        ("h() = 1 = 1;", "期望';'"),
         ("h() = 1;", None),
         (
                 """e(x) == eml(x, 1);
@@ -272,7 +272,66 @@ def test_parser_syntax_error_overall(code, error: bool):
         (
                 "a(b(c()));",
                 "[<Node: '<IdentVariable: 'a'>' [<Node: '<IdentVariable: 'b'>' [<Node: '<IdentVariable: 'c'>' []>]>]>]"
-        )
+        ),
+        (
+                """e(x) = eml(x, 1);
+                    ln(x) = eml(1, eml(eml(1, x), 1));""",
+                """[
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<IdentVariable: 'e'>' [
+                            <Node: '<IdentVariable: 'x'>' []>
+                        ]>, 
+                        <Node: '<IdentVariable: 'eml'>' [
+                            <Node: '<IdentVariable: 'x'>' []>, 
+                            <Node: '<ConstInt: '1'>' []>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<IdentVariable: 'ln'>' [
+                            <Node: '<IdentVariable: 'x'>' []>
+                        ]>, 
+                        <Node: '<IdentVariable: 'eml'>' [
+                            <Node: '<ConstInt: '1'>' []>, 
+                            <Node: '<IdentVariable: 'eml'>' [
+                                <Node: '<IdentVariable: 'eml'>' [
+                                    <Node: '<ConstInt: '1'>' []>, 
+                                    <Node: '<IdentVariable: 'x'>' []>
+                                ]>, 
+                                <Node: '<ConstInt: '1'>' []>
+                            ]>
+                        ]>
+                    ]>
+                ]"""
+        ),
+        (
+                """a(b(), c(3, d())) = e(5, 4, f(g, h(i, j(2, 1, 0))));""",
+                """[
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<IdentVariable: 'a'>' [
+                            <Node: '<IdentVariable: 'b'>' []>, 
+                            <Node: '<IdentVariable: 'c'>' [
+                                <Node: '<ConstInt: '3'>' []>, 
+                                <Node: '<IdentVariable: 'd'>' []>
+                            ]>
+                        ]>, 
+                        <Node: '<IdentVariable: 'e'>' [
+                            <Node: '<ConstInt: '5'>' []>, 
+                            <Node: '<ConstInt: '4'>' []>, 
+                            <Node: '<IdentVariable: 'f'>' [
+                                <Node: '<IdentVariable: 'g'>' []>, 
+                                <Node: '<IdentVariable: 'h'>' [
+                                    <Node: '<IdentVariable: 'i'>' []>, 
+                                    <Node: '<IdentVariable: 'j'>' [
+                                        <Node: '<ConstInt: '2'>' []>, 
+                                        <Node: '<ConstInt: '1'>' []>, 
+                                        <Node: '<ConstInt: '0'>' []>
+                                    ]>
+                                ]>
+                            ]>
+                        ]>
+                    ]>
+                ]"""
+        ),
     ]
 )
 def test_parser_ast(code, expected_raw):
