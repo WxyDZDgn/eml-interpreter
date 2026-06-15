@@ -1,6 +1,7 @@
 from exer.parser import parser
 
 import pytest
+import re
 from typing import Optional
 
 
@@ -250,6 +251,33 @@ def test_parser_syntax_error_overall(code, error: bool):
         with pytest.raises(SyntaxError):
             parser(code)
     else:
-        parser(_code)
         parser(code)
 
+
+@pytest.mark.parametrize(
+    "code, expected_raw",
+    [
+        (
+                "a(b());",
+                "[<Node: '<IdentVariable: 'a'>' [<Node: '<IdentVariable: 'b'>' []>]>]"
+        ),
+        (
+                "1=3;",
+                "[<Node: '<Assignment: '='>' [<Node: '<ConstInt: '1'>' []>, <Node: '<ConstInt: '3'>' []>]>]"
+        ),
+        (
+                "a(b())=3;",
+                "[<Node: '<Assignment: '='>' [<Node: '<IdentVariable: 'a'>' [<Node: '<IdentVariable: 'b'>' []>]>, <Node: '<ConstInt: '3'>' []>]>]"
+        ),
+        (
+                "a(b(c()));",
+                "[<Node: '<IdentVariable: 'a'>' [<Node: '<IdentVariable: 'b'>' [<Node: '<IdentVariable: 'c'>' []>]>]>]"
+        )
+    ]
+)
+def test_parser_ast(code, expected_raw):
+    def _clear_whitespaces(s: str) -> str:
+        return re.sub(r'\s+', '', s)
+
+    actual = str(parser(code))
+    assert _clear_whitespaces(actual) == _clear_whitespaces(expected_raw)
