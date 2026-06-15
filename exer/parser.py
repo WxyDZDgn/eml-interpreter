@@ -13,8 +13,6 @@ from unit.token import (
 from unit.node import Node
 from exer.lexer import lexer
 
-from typing import Optional
-
 
 def _transfer_state(
         state: ExpectedState,
@@ -88,8 +86,9 @@ def _transfer_state(
             return ExpectedState.CLOSE_PAREN_STATE | ExpectedState.COMMA_STATE
     if isinstance(token, Assignment):
         if ExpectedState.FIN_STATE in state:
-            assert is_stack_empty
-            return ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
+            if is_ignoring_before_or_after_assignment:
+                assert is_stack_empty
+                return ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     if isinstance(token, EndOfStmt):
         if ExpectedState.FIN_STATE in state:
             assert is_stack_empty
@@ -116,8 +115,6 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
     stack: list[tuple[Node, list[Node]]] = [(Node(), [])]
     state = ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     is_ignoring_before_or_after_assignment = True
-    root_token: Optional[Token] = None
-    equal_token: Optional[Assignment] = None
     for i in range(left, right + 1):
         cur = tokens[i]
         state = _transfer_state(
@@ -125,17 +122,10 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
         )
         if isinstance(cur, EndOfStmt):
             assert i >= right
-        if root_token is None:
-            root_token = cur
         if isinstance(cur, Assignment):
             assert len(stack) == 1
-            stack[0][0].token = root_token
-            *stack, _ = stack
-            stack.append((Node(), []))
-            stack[0][0].append(_[0])
-            root_token = None
+            stack[0][0].token = cur
             is_ignoring_before_or_after_assignment = False
-            equal_token = cur
         if isinstance(cur, CloseParen):
             *stack, _ = stack
             root, param = _
@@ -146,19 +136,18 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
             stack[-1][1].append(Node(cur))
         if isinstance(cur, OpenParen):
             assert left < i
-            stack.append((stack[-1][0], []))
+            stack.append((stack[-1][1][-1], []))
 
     if not (ExpectedState.CHECKED_FIN_STATE in state):
         raise_syntax_error(state, tokens[right], is_ignoring_before_or_after_assignment)
     assert len(stack) == 1
     assert isinstance(tokens[right], EndOfStmt)
-    if equal_token is not None:
-        assert len(stack[0][1]) == 1
-        stack[0][0].token = equal_token
-        stack[0][0].append(stack[0][1][0])
-    else:
-        stack[0][0].token = root_token
-    return stack[0][0]
+    if not is_ignoring_before_or_after_assignment:
+        assert len(stack[0][1]) == 2
+        for p in stack[0][1]:
+            stack[0][0].append(p)
+        return stack[0][0]
+    return stack[0][1][0]
 
 
 def parser(code: str) -> list[Node]:
