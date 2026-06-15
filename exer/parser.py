@@ -113,10 +113,11 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
     """
     assert 0 <= left <= right < len(tokens)
 
-    stack: list[tuple[Node, list[Token]]] = [(Node(), [])]
+    stack: list[tuple[Node, list[Node]]] = [(Node(), [])]
     state = ExpectedState.IDENT_STATE | ExpectedState.CONST_INT_STATE
     is_ignoring_before_or_after_assignment = True
     root_token: Optional[Token] = None
+    equal_token: Optional[Assignment] = None
     for i in range(left, right + 1):
         cur = tokens[i]
         state = _transfer_state(
@@ -127,26 +128,36 @@ def _construct_node(tokens: list[Token], left: int, right: int) -> Node:
         if root_token is None:
             root_token = cur
         if isinstance(cur, Assignment):
-            root_token = cur
+            assert len(stack) == 1
+            stack[0][0].token = root_token
+            *stack, _ = stack
+            stack.append((Node(), []))
+            stack[0][0].append(_[0])
+            root_token = None
             is_ignoring_before_or_after_assignment = False
+            equal_token = cur
         if isinstance(cur, CloseParen):
             *stack, _ = stack
             root, param = _
             for p in param:
-                root.append(Node(p))
-            stack[-1][0].append(root)
+                root.append(p)
             continue
         if isinstance(cur, IdentVariable) or isinstance(cur, ConstInt):
-            stack[-1][1].append(cur)
+            stack[-1][1].append(Node(cur))
         if isinstance(cur, OpenParen):
             assert left < i
-            stack.append((Node(tokens[i - 1]), []))
+            stack.append((stack[-1][0], []))
 
     if not (ExpectedState.CHECKED_FIN_STATE in state):
         raise_syntax_error(state, tokens[right], is_ignoring_before_or_after_assignment)
     assert len(stack) == 1
     assert isinstance(tokens[right], EndOfStmt)
-    stack[0][0].token = root_token
+    if equal_token is not None:
+        assert len(stack[0][1]) == 1
+        stack[0][0].token = equal_token
+        stack[0][0].append(stack[0][1][0])
+    else:
+        stack[0][0].token = root_token
     return stack[0][0]
 
 
