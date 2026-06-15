@@ -12,32 +12,5 @@ if __name__ == '__main__':
 e(x) = eml(x, 1) ;// ??==;-=+???  cds
                 ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????
 
-<Node: '<Execute: 'execute'>' [
-    <Node: '<Assignment: '='>' [
-        <Node: '<IdentVariable: 'e'>' [
-            <Node: '<IdentVariable: 'x'>' []>
-        ]>, 
-        <Node: '<IdentVariable: 'eml'>' [
-            <Node: '<IdentVariable: 'x'>' []>, 
-            <Node: '<ConstInt: '1'>' []>
-        ]>
-    ]>, 
-    <Node: '<Assignment: '='>' [
-        <Node: '<IdentVariable: 'ln'>' [
-            <Node: '<IdentVariable: 'x'>' []>
-        ]>, 
-        <Node: '<IdentVariable: 'eml'>' [
-            <Node: '<IdentVariable: 'eml'>' [
-                <Node: '<IdentVariable: 'eml'>' [
-                    <Node: '<ConstInt: '1'>' []>, 
-                    <Node: '<IdentVariable: 'x'>' []>
-                ]>, 
-                <Node: '<IdentVariable: 'eml'>' []>, 
-                <Node: '<ConstInt: '1'>' []>
-            ]>, 
-            <Node: '<ConstInt: '1'>' []>, 
-            <Node: '<IdentVariable: 'eml'>' []>
-        ]>
-    ]>
-]>
+
 """
