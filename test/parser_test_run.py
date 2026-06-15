@@ -4,9 +4,9 @@
 from exer.parser import parser
 
 if __name__ == "__main__":
-    code = """e(x) = eml(x, 1) ;// ??==;-=+???  cds
-            ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????"""
-    print(parser(code))
+    code = """a(b());"""
+    nodes = parser(code)
+    print(nodes)
 
 """
 e(x) = eml(x, 1);
