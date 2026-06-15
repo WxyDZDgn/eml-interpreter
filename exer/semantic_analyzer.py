@@ -1,6 +1,12 @@
 from exer.parser import parser
 from unit.node import Node
-from unit.token import Execute
+from unit.symbol_table import SymbolTable
+from unit.token import Execute, Assignment
+
+
+def _semantic_recursive(root: Node, is_after_assignment: bool,
+                        symbol_tables: list[SymbolTable]) -> Node:
+    pass
 
 
 def semantic_analyzer(code: str) -> Node:
@@ -15,7 +21,15 @@ def semantic_analyzer(code: str) -> Node:
         """
     nodes = parser(code)
     root = Node(Execute())
+    symbol_tables: list[SymbolTable] = []
     for node in nodes:
         # 在这里检查语义
+        if isinstance(node.token, Assignment):
+            assert len(node.params) == 2
+            node.params[0] = _semantic_recursive(node.params[0], False, symbol_tables)
+            node.params[1] = _semantic_recursive(node.params[1], True, symbol_tables)
+        else:
+            node = _semantic_recursive(node, True, symbol_tables)
+            pass
         root.append(node)
     return root
