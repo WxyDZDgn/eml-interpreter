@@ -5,7 +5,7 @@ from typing import Optional
 
 
 @pytest.mark.parametrize(
-    "_code, error",
+    "code, error",
     [
         ("h() == 1;", "期望标识符或常数"),
         ("h() = = 1;", "期望标识符或常数"),
@@ -43,16 +43,16 @@ from typing import Optional
         ),
     ],
 )
-def test_parser_syntax_error_caused_by_assignments(_code, error: Optional[str]):
+def test_parser_syntax_error_caused_by_assignments(code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            parser(_code)
+            parser(code)
     else:
-        parser(_code)
+        parser(code)
 
 
 @pytest.mark.parametrize(
-    "_code, error",
+    "code, error",
     [
         ("h() = 1", "期望';'"),
         ("h() = 1;", None),
@@ -88,16 +88,16 @@ def test_parser_syntax_error_caused_by_assignments(_code, error: Optional[str]):
         ),
     ],
 )
-def test_parser_syntax_error_caused_by_unfinished_stmt(_code, error: Optional[str]):
+def test_parser_syntax_error_caused_by_unfinished_stmt(code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            parser(_code)
+            parser(code)
     else:
-        parser(_code)
+        parser(code)
 
 
 @pytest.mark.parametrize(
-    "_code, error",
+    "code, error",
     [
         ("f() = f(1, f(2, 3), f(4, 5, 6), f, g);", False),
 
@@ -245,9 +245,11 @@ def test_parser_syntax_error_caused_by_unfinished_stmt(_code, error: Optional[st
         (" f(1, f(2, 3), f(4, 5, 6), f, ) = f() ;", True),
     ],
 )
-def test_parser_syntax_error_overall(_code, error: bool):
+def test_parser_syntax_error_overall(code, error: bool):
     if error:
         with pytest.raises(SyntaxError):
-            parser(_code)
+            parser(code)
     else:
         parser(_code)
+        parser(code)
+
