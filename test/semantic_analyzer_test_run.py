@@ -7,10 +7,3 @@ if __name__ == '__main__':
     code = """e(x) = eml(x, 1) ;// ??==;-=+???  cds
                 ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????"""
     print(semantic_analyzer(code))
-
-"""
-e(x) = eml(x, 1) ;// ??==;-=+???  cds
-                ln(x) = eml(1, eml(eml(1, x), 1));  // ==-+=++;==?????
-
-
-"""
