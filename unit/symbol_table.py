@@ -12,13 +12,13 @@ class SymbolTable:
     符号表
 
     属性:
-        table: 封装字典作为符号表(名称, 参数数量) -> (有效位, 可修改, AST_Node)
+        table: 封装字典作为符号表(Token, 参数数量) -> (有效位, 可修改, AST_Node, Token)
 
     """
 
     # 不确定 ident_name 要不要用 Token 或者 Node 代替，后者甚至包括 parameter_count
     def __init__(self):
-        self.table: dict[tuple[Token, int], tuple[bool, bool, Optional[Node]]] = dict()
+        self.table: dict[tuple[Token, int], tuple[bool, bool, Optional[Node], Token]] = dict()
 
     def is_defined(self, ident_token: Token, parameter_count: int) -> bool:
         tmp = (ident_token, parameter_count)
@@ -39,13 +39,18 @@ class SymbolTable:
             if not self.is_modifiable(*tmp):
                 return False
             assert is_modifiable == self.is_modifiable(*tmp)
-        self.table[tmp] = (True, is_modifiable, ast_node)
+        self.table[tmp] = (True, is_modifiable, ast_node, tmp[0])
         return True
 
     def get(self, ident_token: Token, parameter_count: int) -> Optional[Node]:
         if not self.is_defined(ident_token, parameter_count):
             return None
         return self.table[(ident_token, parameter_count)][2]
+
+    def get_recycle(self, ident_token: Token, parameter_count: int) -> Optional[Token]:
+        if not self.is_defined(ident_token, parameter_count):
+            return None
+        return self.table[(ident_token, parameter_count)][3]
 
     def __contains__(self, item: Node) -> bool:
         token, count = item.token, len(item.params)
