@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Self
 
 
 def calculate_lineno_and_offset(
@@ -64,6 +64,12 @@ class Token:
 
     def __repr__(self) -> str:
         return f"<{str(self.__class__.__name__)}: '{self.token_str}'>"
+
+    def __eq__(self, other: Self) -> bool:
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return hash(self.token_str)
 
 
 class FuncEml(Token):
