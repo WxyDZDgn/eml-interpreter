@@ -29,3 +29,33 @@ def test_semantic_syntax_before_assignment_error(code, error: Optional[str]):
             semantic_analyzer(code)
     else:
         semantic_analyzer(code)
+
+
+@pytest.mark.parametrize(
+    "code, error",
+    [
+        ("f(a(), b, c) = eml(x, 1);", "期望已定义标识符"),
+        ("f(a(), b, c) = eml(a, 1);", None),
+        ("f(a(), b, c) = eml(c, 1); g(h, f) = f(2, h, i);", "期望已定义标识符"),
+        ("f(a(), b, c) = eml(c, 1); g(h, i) = f(2, h, i);", None),
+        ("eml(x, y) = eml(x, y);", None),
+        ("eml(x, y, z) = eml(x, y, z);", "期望已定义标识符"),
+        ("f(x, y) = eml(x, y); g(x, y) = f(1, x, y);", "期望已定义标识符"),
+        ("f(x, y) = eml(x, y); g(x, y) = f(1, x);", None),
+        ("f(x, y) = eml(x, y); g(x, y) = f(x);", "期望已定义标识符"),
+        ("eml(x, y);", "期望已定义标识符"),
+        ("eml(x, 1);", "期望已定义标识符"),
+        ("eml(2, y);", "期望已定义标识符"),
+        ("eml(2, y);", "期望已定义标识符"),
+        ("eml(2, 1);", None),
+        ("eml(2);", "期望已定义标识符"),
+        ("eml();", "期望已定义标识符"),
+        ("eml(1, 2, 3);", "期望已定义标识符"),
+    ],
+)
+def test_semantic_syntax_after_assignment_error(code, error: Optional[str]):
+    if error is not None:
+        with pytest.raises(SyntaxError, match=error):
+            semantic_analyzer(code)
+    else:
+        semantic_analyzer(code)
