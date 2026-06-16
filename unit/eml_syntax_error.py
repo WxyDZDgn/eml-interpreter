@@ -36,6 +36,12 @@ def _syntax_error_message(
             s.append("'='")
         if is_ignoring_before_or_after_assignment or is_after_assignment:
             s.append("';'")
+
+    if ExpectedState.PARAMETER_STATE in state:
+        s.append("函数参数标识符")
+    if ExpectedState.FUNCTION_STATE in state:
+        s.append("函数标识符")
+    
     return f"期望{'或'.join(s)}"
 
 

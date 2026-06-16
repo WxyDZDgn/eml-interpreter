@@ -13,6 +13,9 @@ class ExpectedState(Flags):
         CONST_INT_STATE: 期望常数
         FIN_STATE: 期望'='或';'
         CHECKED_FIN_STATE: 检查完成
+
+        PARAMETER_STATE: 期望函数参数标识符 (语义分析器专用)
+        FUNCTION_STATE:  期望函数标识符 (语义分析器专用)
     """
 
     IDENT_STATE = ()
@@ -22,5 +25,8 @@ class ExpectedState(Flags):
     CONST_INT_STATE = ()
     FIN_STATE = ()
     CHECKED_FIN_STATE = ()
+
+    PARAMETER_STATE = ()
+    FUNCTION_STATE = ()
 
     UNKNOWN_STATE = ()
