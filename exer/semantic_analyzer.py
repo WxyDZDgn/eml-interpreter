@@ -1,11 +1,42 @@
 from exer.parser import parser
+from unit.expected_state import ExpectedState
 from unit.node import Node
 from unit.symbol_table import SymbolTable
-from unit.token import Execute, Assignment
+from unit.token import Execute, Assignment, IdentVariable, FunctionVariable, ParameterVariable, ConstInt
+from unit.eml_syntax_error import raise_syntax_error
 
 
-def _semantic_recursive(root: Node, is_after_assignment: bool,
-                        symbol_tables: list[SymbolTable]) -> Node:
+def _semantic_construct_node(root: Node, is_after_assignment: bool, is_first_layer: bool,
+                             symbol_tables: list[SymbolTable]) -> Node:
+    assert len(symbol_tables) >= 1
+    if is_after_assignment:
+        pass
+    else:
+        if isinstance(root.token, ConstInt):
+            if is_first_layer:
+                raise_syntax_error(ExpectedState.FUNCTION_STATE, root.token)
+                assert False
+            raise_syntax_error(ExpectedState.PARAMETER_STATE, root.token)
+            assert False
+        if isinstance(root.token, IdentVariable):
+            if not is_first_layer and len(root.params) > 0:
+                raise_syntax_error(ExpectedState.PARAMETER_STATE, root.token)
+                assert False
+            if is_first_layer:
+                root.token = FunctionVariable(root.token)
+            else:
+                root.token = ParameterVariable(root.token)
+                assert root.token is not None
+                assert len(root.params) <= 0
+                cur_table = symbol_tables[-1]
+                if cur_table.is_defined(root.token, len(root.params)):
+                    raise_syntax_error(ExpectedState.UNIQUE_PARAM_STATE, root.token)
+                    assert False
+                _ = cur_table.put(root.token, len(root.params))
+                assert _
+
+        for n_index in range(len(root.params)):
+            root.params[n_index] = _semantic_construct_node(root.params[n_index], is_after_assignment, False, symbol_tables)
 
     return root
 
@@ -27,10 +58,17 @@ def semantic_analyzer(code: str) -> Node:
         # 在这里检查语义
         if isinstance(node.token, Assignment):
             assert len(node.params) == 2
-            node.params[0] = _semantic_recursive(node.params[0], False, symbol_tables)
-            node.params[1] = _semantic_recursive(node.params[1], True, symbol_tables)
+            symbol_tables.append(SymbolTable())
+
+            node.params[0] = _semantic_construct_node(node.params[0], False, True, symbol_tables)
+            node.params[1] = _semantic_construct_node(node.params[1], True, True, symbol_tables)
+
+            symbol_tables.pop()
+            root_table = symbol_tables[0]
+            assert node.params[0].token is not None
+            _ = root_table.put(node.params[0].token, len(node.params[0].params))
+            assert _
         else:
-            node = _semantic_recursive(node, True, symbol_tables)
-            pass
+            node = _semantic_construct_node(node, True, True, symbol_tables)
         root.append(node)
     return root
