@@ -6,7 +6,8 @@ from unit.token import Execute, Assignment
 
 def _semantic_recursive(root: Node, is_after_assignment: bool,
                         symbol_tables: list[SymbolTable]) -> Node:
-    pass
+
+    return root
 
 
 def semantic_analyzer(code: str) -> Node:
@@ -21,7 +22,7 @@ def semantic_analyzer(code: str) -> Node:
         """
     nodes = parser(code)
     root = Node(Execute())
-    symbol_tables: list[SymbolTable] = []
+    symbol_tables: list[SymbolTable] = [SymbolTable()]
     for node in nodes:
         # 在这里检查语义
         if isinstance(node.token, Assignment):
