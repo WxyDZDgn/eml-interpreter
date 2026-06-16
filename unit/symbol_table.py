@@ -25,7 +25,7 @@ class SymbolTable:
 
     def is_modifiable(self, ident_name: str, parameter_count: int) -> bool:
         tmp = (ident_name, parameter_count)
-        return tmp in self.table.keys() and self.table[tmp][1]
+        return self.is_defined(*tmp) and self.table[tmp][1]
 
     def clear(self):
         # 本打算直接修改有效位的，鉴于元组无法修改，并且没想好显式指定类型到定长可修改结构，先暂时 `.clear()`
