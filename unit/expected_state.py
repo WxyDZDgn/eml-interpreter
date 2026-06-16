@@ -14,8 +14,10 @@ class ExpectedState(Flags):
         FIN_STATE: 期望'='或';'
         CHECKED_FIN_STATE: 检查完成
 
-        PARAMETER_STATE: 期望函数参数标识符 (语义分析器专用)
+        PARAMETER_STATE: 函数参数标识符 (语义分析器专用)
         FUNCTION_STATE:  期望函数标识符 (语义分析器专用)
+        DEFINED_STATE:  期望已定义标识符 (语义分析器专用)
+        UNIQUE_PARAM_STATE:  期望非重复的函数参数 (语义分析器专用)
     """
 
     IDENT_STATE = ()
@@ -28,5 +30,7 @@ class ExpectedState(Flags):
 
     PARAMETER_STATE = ()
     FUNCTION_STATE = ()
+    DEFINED_STATE = ()
+    UNIQUE_PARAM_STATE = ()
 
     UNKNOWN_STATE = ()

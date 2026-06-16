@@ -38,10 +38,14 @@ def _syntax_error_message(
             s.append("';'")
 
     if ExpectedState.PARAMETER_STATE in state:
-        s.append("函数参数标识符")
+        s.append("参数标识符")
     if ExpectedState.FUNCTION_STATE in state:
         s.append("函数标识符")
-    
+    if ExpectedState.UNIQUE_PARAM_STATE in state:
+        s.append("非重复参数标识符")
+    if ExpectedState.DEFINED_STATE in state:
+        s.append("已定义标识符")
+
     return f"期望{'或'.join(s)}"
 
 
