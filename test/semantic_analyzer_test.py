@@ -5,7 +5,7 @@ from typing import Optional
 
 import pytest
 
-from exer.semantic_analyzer import semantic_analyzer
+from exer.semantic_analyzer import SemanticAnalyzer
 
 
 @pytest.mark.parametrize(
@@ -26,9 +26,9 @@ from exer.semantic_analyzer import semantic_analyzer
 def test_semantic_syntax_before_assignment_error(code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            semantic_analyzer(code)
+            SemanticAnalyzer().analyze(code)
     else:
-        semantic_analyzer(code)
+        SemanticAnalyzer().analyze(code)
 
 
 @pytest.mark.parametrize(
@@ -56,6 +56,6 @@ def test_semantic_syntax_before_assignment_error(code, error: Optional[str]):
 def test_semantic_syntax_after_assignment_error(code, error: Optional[str]):
     if error is not None:
         with pytest.raises(SyntaxError, match=error):
-            semantic_analyzer(code)
+            SemanticAnalyzer().analyze(code)
     else:
-        semantic_analyzer(code)
+        SemanticAnalyzer().analyze(code)
