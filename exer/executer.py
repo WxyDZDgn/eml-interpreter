@@ -1,8 +1,24 @@
-from unit.node import Node
+from exer.semantic_analyzer import SemanticAnalyzer
+from unit.token import Execute
+import traceback
+
+from unit.symbol_table import SymbolTable
 
 
 class Executer:
     def __init__(self) -> None:
-        # (名称, 参数数量) -> (有效位, 可修改, AST)
-        self.symbol_table: dict[tuple[str, int], tuple[bool, bool, Node]] = {}
+        self.symbol_table: SymbolTable = SymbolTable()
+        self.semantic_analyzer: SemanticAnalyzer = SemanticAnalyzer()
         pass
+
+    def exec(self, code: str) -> None:
+        # noinspection PyBroadException
+        try:
+            ast_node = self.semantic_analyzer.analyze(code)
+            assert isinstance(ast_node.token, Execute)
+            pass
+        except SyntaxError:
+            traceback.print_exc(limit=0)
+            exit(1)
+        except AssertionError:
+            assert False
