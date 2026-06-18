@@ -72,6 +72,7 @@ class Token:
         return hash(self.token_str)
 
 
+@DeprecationWarning
 class FuncEml(Token):
     """
     核心函数 Exp Minus Ln 词元, 特指不可被重新赋值
