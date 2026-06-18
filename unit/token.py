@@ -1,4 +1,4 @@
-from typing import Optional, Self
+from typing import Optional
 
 
 def calculate_lineno_and_offset(
@@ -65,7 +65,9 @@ class Token:
     def __repr__(self) -> str:
         return f"<{str(self.__class__.__name__)}: '{self.token_str}'>"
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Token):
+            return False
         return self.token_str == other.token_str
 
     def __hash__(self) -> int:
@@ -90,6 +92,12 @@ class OpenParen(Token):
     def __init__(self, **kwargs) -> None:
         super().__init__("(", None, **kwargs)
 
+    def __eq__(self, other) -> bool:
+        return isinstance(other, OpenParen)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class CloseParen(Token):
     """
@@ -98,6 +106,12 @@ class CloseParen(Token):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(")", None, **kwargs)
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, CloseParen)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class Comma(Token):
@@ -108,6 +122,12 @@ class Comma(Token):
     def __init__(self, **kwargs) -> None:
         super().__init__(",", None, **kwargs)
 
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Comma)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class ConstInt(Token):
     """
@@ -116,6 +136,11 @@ class ConstInt(Token):
 
     def __init__(self, token_value: int, **kwargs) -> None:
         super().__init__(str(token_value), token_value, **kwargs)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ConstInt):
+            return False
+        return self.token_str == other.token_str
 
 
 class EndOfStmt(Token):
@@ -126,6 +151,12 @@ class EndOfStmt(Token):
     def __init__(self, **kwargs) -> None:
         super().__init__(";", None, **kwargs)
 
+    def __eq__(self, other) -> bool:
+        return isinstance(other, EndOfStmt)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class IdentVariable(Token):
     """
@@ -134,6 +165,14 @@ class IdentVariable(Token):
 
     def __init__(self, token_value: str, **kwargs) -> None:
         super().__init__(token_value, token_value, **kwargs)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, IdentVariable):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class WhiteSpace(Token):
@@ -146,6 +185,14 @@ class WhiteSpace(Token):
             token_value.encode("unicode_escape").decode("ascii"), token_value, **kwargs
         )
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, WhiteSpace):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class Assignment(Token):
     """
@@ -155,6 +202,12 @@ class Assignment(Token):
     def __init__(self, **kwargs) -> None:
         super().__init__("=", None, **kwargs)
 
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Assignment)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class Annotation(Token):
     """注释词元"""
@@ -163,6 +216,14 @@ class Annotation(Token):
         super().__init__(
             token_value.encode("unicode_escape").decode("ascii"), token_value, **kwargs
         )
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Annotation):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class Unknown(Token):
@@ -175,6 +236,14 @@ class Unknown(Token):
             token_value.encode("unicode_escape").decode("ascii"), token_value, **kwargs
         )
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Unknown):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class ParameterVariable(IdentVariable):
     """
@@ -185,6 +254,16 @@ class ParameterVariable(IdentVariable):
         assert isinstance(ident_variable.token_value, str)
         info = ident_variable.info[:4]
         super().__init__(ident_variable.token_value, file_name=info[0], lineno=info[1], offset=info[2], text=info[3])
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, IdentVariable):
+            return False
+        if isinstance(other, FunctionVariable):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class FunctionVariable(IdentVariable):
@@ -197,6 +276,16 @@ class FunctionVariable(IdentVariable):
         info = ident_variable.info[:4]
         super().__init__(ident_variable.token_value, file_name=info[0], lineno=info[1], offset=info[2], text=info[3])
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, IdentVariable):
+            return False
+        if isinstance(other, ParameterVariable):
+            return False
+        return self.token_str == other.token_str
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 
 class Execute(Token):
     """
@@ -205,3 +294,9 @@ class Execute(Token):
 
     def __init__(self):
         super().__init__("execute", None)
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Execute)
+
+    def __hash__(self) -> int:
+        return super().__hash__()
