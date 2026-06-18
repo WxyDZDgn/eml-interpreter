@@ -4,6 +4,7 @@
 from typing import Optional
 
 import pytest
+import re
 
 from exer.semantic_analyzer import SemanticAnalyzer
 
@@ -59,3 +60,158 @@ def test_semantic_syntax_after_assignment_error(code, error: Optional[str]):
             SemanticAnalyzer().analyze(code)
     else:
         SemanticAnalyzer().analyze(code)
+
+
+@pytest.mark.parametrize(
+    "code, expected_raw",
+    [
+        (
+                """e(x) = eml(x, 1);
+                    ln(x) = eml(1, eml(eml(1, x), 1));""",
+                """<Node: '<Execute: 'execute'>' [
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'e'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>, 
+                            <Node: '<ConstInt: '1'>' []>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'ln'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<ConstInt: '1'>' []>, 
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<FunctionVariable: 'eml'>' [
+                                    <Node: '<ConstInt: '1'>' []>, 
+                                    <Node: '<ParameterVariable: 'x'>' []>
+                                ]>, 
+                                <Node: '<ConstInt: '1'>' []>
+                            ]>
+                        ]>
+                    ]>
+                ]>"""
+        ),
+        (
+                """f(x, y, z) = eml(eml(x, y), eml(y, z));
+                g(f) = f(f, f, f);""",
+                """<Node: '<Execute: 'execute'>' [
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>, 
+                            <Node: '<ParameterVariable: 'y'>' []>, 
+                            <Node: '<ParameterVariable: 'z'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<ParameterVariable: 'x'>' []>, 
+                                <Node: '<ParameterVariable: 'y'>' []>
+                            ]>, 
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<ParameterVariable: 'y'>' []>, 
+                                <Node: '<ParameterVariable: 'z'>' []>
+                            ]>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'g'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>, 
+                            <Node: '<ParameterVariable: 'f'>' []>, 
+                            <Node: '<ParameterVariable: 'f'>' []>
+                        ]>
+                    ]>
+                ]>"""
+        ),
+        (
+                """f(x, y, z) = eml(eml(x, y), eml(y, z));
+                g(f()) = f(f(), f(f, f, f), f);""",
+                """<Node: '<Execute: 'execute'>' [
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>, 
+                            <Node: '<ParameterVariable: 'y'>' []>, 
+                            <Node: '<ParameterVariable: 'z'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<ParameterVariable: 'x'>' []>, 
+                                <Node: '<ParameterVariable: 'y'>' []>
+                            ]>, 
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<ParameterVariable: 'y'>' []>, 
+                                <Node: '<ParameterVariable: 'z'>' []>
+                            ]>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'g'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>, 
+                            <Node: '<FunctionVariable: 'f'>' [
+                                <Node: '<ParameterVariable: 'f'>' []>, 
+                                <Node: '<ParameterVariable: 'f'>' []>, 
+                                <Node: '<ParameterVariable: 'f'>' []>
+                            ]>, 
+                            <Node: '<ParameterVariable: 'f'>' []>
+                        ]>
+                    ]>
+                ]>"""
+        ),
+        (
+                """f() = eml(1, 2);
+                f(x, y) = eml(eml(x, f), eml(f, y));
+                g(f()) = f(f(), f(f, f()));""",
+                """<Node: '<Execute: 'execute'>' [
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'f'>' []>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<ConstInt: '1'>' []>, 
+                            <Node: '<ConstInt: '2'>' []>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'x'>' []>, 
+                            <Node: '<ParameterVariable: 'y'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'eml'>' [
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<ParameterVariable: 'x'>' []>, 
+                                <Node: '<FunctionVariable: 'f'>' []>
+                            ]>, 
+                            <Node: '<FunctionVariable: 'eml'>' [
+                                <Node: '<FunctionVariable: 'f'>' []>, 
+                                <Node: '<ParameterVariable: 'y'>' []>
+                            ]>
+                        ]>
+                    ]>, 
+                    <Node: '<Assignment: '='>' [
+                        <Node: '<FunctionVariable: 'g'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>
+                        ]>, 
+                        <Node: '<FunctionVariable: 'f'>' [
+                            <Node: '<ParameterVariable: 'f'>' []>, 
+                            <Node: '<FunctionVariable: 'f'>' [
+                                <Node: '<ParameterVariable: 'f'>' []>, 
+                                <Node: '<ParameterVariable: 'f'>' []>
+                            ]>
+                        ]>
+                    ]>
+                ]>"""
+        ),
+    ]
+)
+def test_semantic_analyzer_ast(code, expected_raw):
+    def _clear_whitespaces(s: str) -> str:
+        return re.sub(r'\s+', '', s)
+
+    actual = str(SemanticAnalyzer().analyze(code))
+    assert _clear_whitespaces(actual) == _clear_whitespaces(expected_raw)
